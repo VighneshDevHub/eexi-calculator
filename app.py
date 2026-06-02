@@ -72,6 +72,10 @@ def history():
     vessels = Vessel.query.order_by(Vessel.created_at.desc()).all()
     return render_template('history.html', vessels=[v.to_dict() for v in vessels])
 
+@app.route('/manual')
+def manual():
+    return render_template('manual.html')
+
 @app.route('/report/<int:vessel_id>')
 def report(vessel_id):
     vessel = Vessel.query.get_or_404(vessel_id)
