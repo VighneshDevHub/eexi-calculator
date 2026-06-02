@@ -21,25 +21,30 @@
     <nav class="navbar">
       <div class="container">
         <a href="{{ url_for('index') }}" class="logo">
-          <i class="fas fa-ship"></i> EEXI<span>Calculator</span>
+          <i class="fas fa-compass"></i> Goltens<span>EEXI</span>
         </a>
-        <ul class="nav-links">
-          <li>
-            <a href="{{ url_for('index') }}"
-              ><i class="fas fa-calculator"></i> Calculate</a
-            >
-          </li>
-          <li>
-            <a href="{{ url_for('history') }}"
-              ><i class="fas fa-history"></i> History</a
-            >
-          </li>
-          <li>
-            <a href="{{ url_for('manual') }}"
-              ><i class="fas fa-book"></i> User Manual</a
-            >
-          </li>
-        </ul>
+        <div class="nav-right">
+          <button class="menu-toggle" aria-label="Toggle menu">
+            <i class="fas fa-bars"></i>
+          </button>
+          <ul class="nav-links">
+            <li>
+              <a href="{{ url_for('index') }}"
+                ><i class="fas fa-calculator"></i> Calculate</a
+              >
+            </li>
+            <li>
+              <a href="{{ url_for('history') }}"
+                ><i class="fas fa-history"></i> History</a
+              >
+            </li>
+            <li>
+              <a href="{{ url_for('manual') }}"
+                ><i class="fas fa-book"></i> User Manual</a
+              >
+            </li>
+          </ul>
+        </div>
       </div>
     </nav>
 
@@ -47,7 +52,13 @@
 
     <footer class="footer">
       <div class="container">
-        <p>&copy; 2024 Goltens EEXI Compliance Tool. All rights reserved.</p>
+        <p>
+          &copy; {{ now.year if now else '2026' }} Goltens EEXI Compliance Tool.
+          All Rights Reserved.
+        </p>
+        <p style="font-size: 0.8rem; margin-top: 0.5rem; opacity: 0.7">
+          Developed for IMO MEPC.350(78) Regulatory Standards.
+        </p>
       </div>
     </footer>
 

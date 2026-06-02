@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for
 from database.db import db, init_db, Vessel
 from eexi.calculator import calculate_eexi
@@ -14,8 +15,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 init_db(app)
 
 @app.context_processor
-def inject_labels():
-    return dict(SHIP_LABELS=SHIP_LABELS, CF_LABELS=CF_LABELS)
+def inject_now():
+    return dict(now=datetime.now(), SHIP_LABELS=SHIP_LABELS, CF_LABELS=CF_LABELS)
 
 @app.route('/')
 def index():
