@@ -55,23 +55,26 @@ body {
 .navbar {
   background-color: var(--primary);
   color: white;
-  padding: 1.25rem 0;
+  padding: 1rem 0;
   position: sticky;
   top: 0;
   z-index: 1000;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  width: 100%;
 }
 
 .navbar .container {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  width: 100%;
 }
 
 .nav-right {
   display: flex;
   align-items: center;
+  position: relative;
 }
 
 .logo {
@@ -84,6 +87,7 @@ body {
   gap: 0.75rem;
   letter-spacing: -0.02em;
   transition: opacity 0.3s ease;
+  flex-shrink: 0;
 }
 
 .logo:hover {
@@ -108,11 +112,13 @@ body {
   font-size: 1.5rem;
   cursor: pointer;
   padding: 0.5rem;
-  transition: color 0.3s ease;
+  transition: all 0.3s ease;
+  z-index: 1001;
 }
 
 .menu-toggle:hover {
   color: var(--accent);
+  transform: scale(1.1);
 }
 
 .nav-links {
@@ -567,7 +573,7 @@ th {
 
 @media (max-width: 768px) {
   .navbar {
-    padding: 1rem 0;
+    padding: 0.75rem 0;
   }
 
   .menu-toggle {
@@ -575,23 +581,25 @@ th {
   }
 
   .nav-links {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    width: 100%;
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 280px;
+    height: 100vh;
     background-color: var(--primary);
     flex-direction: column;
     gap: 0;
-    padding: 1rem 0;
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.4s ease-in-out;
-    border-top: 1px solid var(--primary-light);
+    padding: 5rem 0 2rem 0;
+    transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border-top: none;
+    border-left: 1px solid var(--primary-light);
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
   }
 
   .nav-links.active {
-    max-height: 300px;
-    box-shadow: var(--shadow-lg);
+    right: 0;
+    max-height: none;
   }
 
   .nav-links li {
@@ -599,21 +607,20 @@ th {
   }
 
   .nav-links a {
-    padding: 1rem 2rem;
+    padding: 1.25rem 2.5rem;
     width: 100%;
+    font-size: 1.1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   }
 
   .nav-links a:hover {
     background-color: var(--primary-light);
     transform: none;
+    padding-left: 3rem;
   }
 
   .logo {
     font-size: 1.2rem;
-  }
-
-  .nav-links.active {
-    max-height: 350px;
   }
 
   .result-container {
