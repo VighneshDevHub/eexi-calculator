@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EEXI Calculator — IMO MEPC.350(78)</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <div class="header-inner">
+        <div>
+          <h1 class="site-title">EEXI Calculator</h1>
+          <p class="site-subtitle">Energy Efficiency Existing Ship Index &middot; IMO MEPC.350(78)</p>
+        </div>
+        <span class="badge">IMO Compliant</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="container main-grid">
+    <section class="card form-card">
+      <h2 class="card-title">Vessel Particulars</h2>
+      <form id="eexi-form" novalidate>
+
+        <div class="field-group">
+          <label for="ship_type">Ship Type</label>
+          <select id="ship_type" name="ship_type" required>
+            {% for key, label in ship_options.items() %}
+            <option value="{{ key }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="field-row">
+          <div class="field-group" id="dwt-group">
+            <label for="dwt">DWT <span class="unit">(tonnes)</span></label>
+            <input type="number" id="dwt" name="dwt" min="100" step="any" placeholder="e.g. 75000" />
+            <span class="hint" id="dwt-hint">Deadweight tonnage</span>
+          </div>
+          <div class="field-group hidden" id="gt-group">
+            <label for="gt">GT <span class="unit">(gross tonnage)</span></label>
+            <input type="number" id="gt" name="gt" min="100" step="any" placeholder="e.g. 45000" />
+            <span class="hint">For Ro-Ro passenger / Cruise</span>
+          </div>
+        </div>
+
+        <h3 class="section-label">Main Engine</h3>
+        <div class="field-row">
+          <div class="field-group">
+            <label for="mcr">MCR <span class="unit">(kW)</span></label>
+            <input type="number" id="mcr" name="mcr" min="1" step="any" placeholder="e.g. 12000" required />
+            <span class="hint">Max continuous rating</span>
+          </div>
+          <div class="field-group">
+            <label for="sfc">SFC <span class="unit">(g/kWh)</span></label>
+            <input type="number" id="sfc" name="sfc" min="50" max="500" step="any" placeholder="e.g. 175" required />
+            <span class="hint">At 75% MCR from NTF</span>
+          </div>
+          <div class="field-group">
+            <label for="v_ref">Speed <span class="unit">(knots)</span></label>
+            <input type="number" id="v_ref" name="v_ref" min="1" max="50" step="0.1" placeholder="e.g. 14.5" required />
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label for="fuel_type">Main Engine Fuel</label>
+          <select id="fuel_type" name="fuel_type">
+            {% for key, label in fuel_options.items() %}
+            <option value="{{ key }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <details class="aux-section">
+          <summary>Auxiliary Engine <span class="optional-tag">optional</span></summary>
+          <div class="field-row aux-fields">
+            <div class="field-group">
+              <label for="pae">Aux Power <span class="unit">(kW)</span></label>
+              <input type="number" id="pae" name="pae" min="0" step="any" placeholder="e.g. 500" value="0" />
+            </div>
+            <div class="field-group">
+              <label for="sfc_ae">Aux SFC <span class="unit">(g/kWh)</span></label>
+              <input type="number" id="sfc_ae" name="sfc_ae" min="0" step="any" placeholder="e.g. 200" value="0" />
+            </div>
+            <div class="field-group">
+              <label for="fuel_ae">Aux Fuel</label>
+              <select id="fuel_ae" name="fuel_ae">
+                {% for key, label in fuel_options.items() %}
+                <option value="{{ key }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </details>
+
+        <div id="form-error" class="form-error hidden"></div>
+        <button type="submit" id="calc-btn" class="btn-primary">
+          <span id="btn-text">Calculate EEXI</span>
+          <span id="btn-spinner" class="spinner hidden"></span>
+        </button>
+      </form>
+    </section>
+
+    <section id="results-panel" class="card results-card hidden">
+      <h2 class="card-title">Results</h2>
+
+      <div id="status-banner" class="status-banner">
+        <span id="status-icon" class="status-icon"></span>
+        <span id="status-text" class="status-text"></span>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric">
+          <div class="metric-label">Attained EEXI</div>
+          <div class="metric-value" id="r-attained">--</div>
+          <div class="metric-unit">gCO2 / t&middot;nm</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Required EEXI</div>
+          <div class="metric-value" id="r-required">--</div>
+          <div class="metric-unit">gCO2 / t&middot;nm</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Margin</div>
+          <div class="metric-value" id="r-margin">--</div>
+          <div class="metric-unit">%</div>
+        </div>
+      </div>
+
+      <div class="gauge-section">
+        <div class="gauge-track">
+          <div class="gauge-required-line" id="gauge-req-line"></div>
+          <div class="gauge-fill" id="gauge-fill"></div>
+        </div>
+        <div class="gauge-legend">
+          <span class="legend-dot attained-dot"></span> Attained &nbsp;
+          <span class="legend-dot required-dot"></span> Required
+        </div>
+      </div>
+
+      <details class="detail-section">
+        <summary>Calculation Breakdown</summary>
+        <table class="detail-table">
+          <tbody>
+            <tr><td>PME (0.75 x MCR)</td><td id="r-pme">--</td><td>kW</td></tr>
+            <tr><td>ME emissions</td><td id="r-me-em">--</td><td>gCO2/nm</td></tr>
+            <tr><td>AE emissions</td><td id="r-ae-em">--</td><td>gCO2/nm</td></tr>
+            <tr><td>Total numerator</td><td id="r-num">--</td><td>gCO2/nm</td></tr>
+            <tr><td>Capacity used</td><td id="r-cap">--</td><td>t / GT</td></tr>
+            <tr><td>CF (main engine)</td><td id="r-cf">--</td><td>gCO2/gFuel</td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <div id="epl-section" class="epl-card hidden">
+        <h3 class="epl-title">Engine Power Limitation Required</h3>
+        <div class="epl-grid">
+          <div class="epl-metric">
+            <div class="epl-label">Max Allowable PME</div>
+            <div class="epl-value" id="r-epl-pme">--</div>
+            <div class="epl-unit">kW</div>
+          </div>
+          <div class="epl-metric">
+            <div class="epl-label">Limited MCR</div>
+            <div class="epl-value" id="r-epl-mcr">--</div>
+            <div class="epl-unit">kW</div>
+          </div>
+          <div class="epl-metric">
+            <div class="epl-label">EPL Setting</div>
+            <div class="epl-value" id="r-epl-pct">--</div>
+            <div class="epl-unit">% of installed MCR</div>
+          </div>
+        </div>
+        <p id="epl-note" class="epl-note"></p>
+      </div>
+
+      <button class="btn-secondary" onclick="resetForm()">New Calculation</button>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>Based on IMO Resolution MEPC.350(78) &middot; MARPOL Annex VI &middot; For reference only</p>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

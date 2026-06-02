@@ -1,0 +1,105 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="result-header card" style="text-align: center;">
+    <h1>EEXI Calculation Results</h1>
+    <p class="subtitle">Vessel: <strong>{{ result.vessel_name or 'Unnamed Vessel' }}</strong></p>
+    <div class="status-badge status-{{ result.status.lower().replace('_', '-') }}">
+        {{ result.status.replace('_', ' ') }}
+    </div>
+    <div class="result-container">
+        <div class="result-card">
+            <div class="result-value">{{ result.attained_eexi }}</div>
+            <div class="result-label">Attained EEXI (gCO2/t·nm)</div>
+        </div>
+        <div class="result-card">
+            <div class="result-value">{{ result.required_eexi }}</div>
+            <div class="result-label">Required EEXI (gCO2/t·nm)</div>
+        </div>
+        <div class="result-card">
+            <div class="result-value {% if result.margin >= 0 %}text-success{% else %}text-danger{% endif %}">
+                {{ result.margin }}%
+            </div>
+            <div class="result-label">Compliance Margin</div>
+        </div>
+    </div>
+</div>
+
+{% if not result.compliant and result.epl %}
+<div class="card epl-card">
+    <h2><i class="fas fa-exclamation-triangle"></i> Engine Power Limitation (EPL)</h2>
+    {% if result.epl.epl_possible %}
+        <p class="mb-4">{{ result.epl.note }}</p>
+        <div class="result-container">
+            <div class="result-card">
+                <div class="result-value">{{ result.epl.limited_mcr }} kW</div>
+                <div class="result-label">Limited MCR</div>
+            </div>
+            <div class="result-card">
+                <div class="result-value">{{ result.epl.epl_percentage }}%</div>
+                <div class="result-label">% of Installed MCR</div>
+            </div>
+            <div class="result-card">
+                <div class="result-value">{{ result.epl.max_pme }} kW</div>
+                <div class="result-label">Max Allowable PME</div>
+            </div>
+        </div>
+    {% else %}
+        <div class="error-msg">
+            <i class="fas fa-times-circle"></i> {{ result.epl.note }}
+        </div>
+    {% endif %}
+</div>
+{% elif result.status == 'BORDERLINE' %}
+<div class="card warning-card">
+    <h2><i class="fas fa-exclamation-circle"></i> Borderline Compliance</h2>
+    <p>The vessel is compliant but with a narrow margin (< 5%). Implementing Engine Power Limitation (EPL) may be advisable to ensure continued compliance under varying conditions.</p>
+</div>
+{% endif %}
+
+<div class="card">
+    <h2><i class="fas fa-list"></i> Calculation Details</h2>
+    <div class="table-responsive">
+        <table class="details-table">
+            <thead>
+                <tr>
+                    <th colspan="2">Vessel & Capacity</th>
+                    <th colspan="2">Emissions & Power</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <th>Ship Type</th>
+                    <td>{{ result.ship_details.type.replace('_', ' ').title() }}</td>
+                    <th>Main Engine Power (PME)</th>
+                    <td>{{ result.ship_details.pme }} kW</td>
+                </tr>
+                <tr>
+                    <th>Capacity</th>
+                    <td>{{ result.ship_details.capacity | round(2) }}</td>
+                    <th>ME Emissions Term</th>
+                    <td>{{ result.ship_details.me_emissions | round(2) }} gCO2/nm</td>
+                </tr>
+                <tr>
+                    <th>Numerator (Total)</th>
+                    <td>{{ result.ship_details.numerator | round(2) }} gCO2/nm</td>
+                    <th>AE Emissions Term</th>
+                    <td>{{ result.ship_details.ae_emissions | round(2) }} gCO2/nm</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="action-buttons">
+    <a href="/" class="btn btn-secondary">
+        <i class="fas fa-redo"></i> New Calculation
+    </a>
+    <a href="/report/{{ result.vessel_id }}" class="btn btn-primary">
+        <i class="fas fa-file-pdf"></i> Download PDF Report
+    </a>
+    <a href="/history" class="btn btn-outline">
+        <i class="fas fa-history"></i> View History
+    </a>
+</div>
+{% endblock %}
