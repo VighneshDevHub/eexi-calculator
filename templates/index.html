@@ -34,12 +34,12 @@
                     </select>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group" id="dwt-group">
                     <label for="dwt">Deadweight (DWT) <span class="unit">[tonnes]</span></label>
                     <input type="number" step="0.01" id="dwt" name="dwt" placeholder="e.g. 75000" value="{{ form_data.dwt if form_data else '' }}">
                 </div>
 
-                <div class="form-group">
+                <div class="form-group" id="gt-group">
                     <label for="gt">Gross Tonnage (GT)</label>
                     <input type="number" step="0.01" id="gt" name="gt" placeholder="e.g. 50000" value="{{ form_data.gt if form_data else '' }}">
                 </div>
@@ -116,6 +116,18 @@
                 <div class="form-group">
                     <label for="f_w">Weather Factor (f_w)</label>
                     <input type="number" step="0.001" id="f_w" name="f_w" placeholder="1.0" value="{{ form_data.f_w if form_data else '1.0' }}">
+                </div>
+                <div class="form-group">
+                    <label for="f_c">Cubic Capacity Factor (f_c)</label>
+                    <input type="number" step="0.001" id="f_c" name="f_c" placeholder="1.0" value="{{ form_data.f_c if form_data else '1.0' }}">
+                </div>
+                <div class="form-group">
+                    <label for="f_l">General Cargo Factor (f_l)</label>
+                    <input type="number" step="0.001" id="f_l" name="f_l" placeholder="1.0" value="{{ form_data.f_l if form_data else '1.0' }}">
+                </div>
+                <div class="form-group">
+                    <label for="f_m">Ice Class Factor (f_m)</label>
+                    <input type="number" step="0.001" id="f_m" name="f_m" placeholder="1.0" value="{{ form_data.f_m if form_data else '1.0' }}">
                 </div>
             </div>
         </div>

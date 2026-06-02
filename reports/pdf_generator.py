@@ -90,8 +90,7 @@ def generate_pdf_report(vessel_data, result_data):
     # Results
     elements.append(Paragraph("Calculation Results", section_style))
     status_color = colors.green
-    if result_data['status'] == 'BORDERLINE': status_color = colors.orange
-    elif result_data['status'] == 'NON_COMPLIANT': status_color = colors.red
+    if result_data['status'] == 'NON_COMPLIANT': status_color = colors.red
     
     results_info = [
         ["Attained EEXI", f"{result_data['attained_eexi']} gCO2/t·nm"],

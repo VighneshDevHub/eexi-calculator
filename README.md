@@ -59,7 +59,6 @@ $$Limited\ MCR = \frac{Max\ P_{ME}}{0.75}$$
 - **Dynamic Timezone Handling**: Automatically detects the user's local time for accurate report dating globally.
 - **Automated Compliance Verdicts**:
   - ✅ **COMPLIANT**: Vessel meets the required standard.
-  - ⚠️ **BORDERLINE**: Within 5% of the limit (caution advised).
   - ❌ **NON-COMPLIANT**: Vessel fails and requires technical intervention.
 - **Professional PDF Export**: One-click generation of a detailed Technical Report.
 - **History Management**: Securely store and review previous calculations in a searchable history log.

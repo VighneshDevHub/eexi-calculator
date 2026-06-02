@@ -4,7 +4,7 @@ eexi/eexi.py
 Core EEXI attained / required calculation and compliance check.
 """
 
-from .ship_params import SHIP_PARAMS, get_capacity
+from .ship_params import SHIP_PARAMS, get_capacity, get_reduction_factor
 
 
 def calc_attained_eexi(
@@ -13,11 +13,14 @@ def calc_attained_eexi(
     v_ref: float,
     f_i: float = 1.0,
     f_w: float = 1.0,
+    f_c: float = 1.0,
+    f_l: float = 1.0,
+    f_m: float = 1.0,
 ) -> float:
     """
     Calculate attained EEXI.
 
-    Attained EEXI = numerator / (f_i * capacity * v_ref * f_w)
+    Attained EEXI = numerator / (f_i * f_c * f_l * capacity * f_w * v_ref * f_m)
 
     Parameters
     ----------
@@ -26,6 +29,9 @@ def calc_attained_eexi(
     v_ref     : float  Design speed at 75% MCR (knots)
     f_i       : float  Capacity correction factor (default 1.0)
     f_w       : float  Weather correction factor  (default 1.0)
+    f_c       : float  Cubic capacity correction factor (default 1.0)
+    f_l       : float  General cargo correction factor (default 1.0)
+    f_m       : float  Ice class correction factor (default 1.0)
 
     Returns
     -------
@@ -41,10 +47,10 @@ def calc_attained_eexi(
         raise ValueError(f"Capacity must be positive, got {capacity}")
     if v_ref <= 0:
         raise ValueError(f"V_ref must be positive, got {v_ref}")
-    if f_i <= 0 or f_w <= 0:
-        raise ValueError("Correction factors f_i and f_w must be positive.")
+    if f_i <= 0 or f_w <= 0 or f_c <= 0 or f_l <= 0 or f_m <= 0:
+        raise ValueError("Correction factors f_i, f_w, f_c, f_l and f_m must be positive.")
 
-    denominator = f_i * capacity * v_ref * f_w
+    denominator = f_i * f_c * f_l * capacity * v_ref * f_w * f_m
     return numerator / denominator
 
 
@@ -72,7 +78,8 @@ def calc_required_eexi(ship_type: str, dwt_or_gt: float) -> float:
     if dwt_or_gt <= 0:
         raise ValueError("DWT / GT must be positive.")
 
-    a, c, reduction, _ = SHIP_PARAMS[ship_type]
+    a, c, _ = SHIP_PARAMS[ship_type]
+    reduction = get_reduction_factor(ship_type, dwt_or_gt)
     eedi_ref = a * (dwt_or_gt ** (-c))
     return eedi_ref * (1.0 - reduction)
 
@@ -89,17 +96,14 @@ def check_compliance(attained: float, required: float) -> dict:
     Returns
     -------
     dict with keys:
-        status   : str    "COMPLIANT" | "BORDERLINE" | "NON_COMPLIANT"
+        status   : str    "COMPLIANT" | "NON_COMPLIANT"
         margin   : float  Percentage margin  (+ve = headroom, -ve = excess)
         compliant: bool
     """
     margin_pct = ((required - attained) / required) * 100.0
 
     if attained <= required:
-        if margin_pct < 5.0:
-            status = "BORDERLINE"
-        else:
-            status = "COMPLIANT"
+        status = "COMPLIANT"
         compliant = True
     else:
         status = "NON_COMPLIANT"

@@ -23,6 +23,9 @@ def calculate_eexi(data: dict) -> dict:
     f_eff = float(data.get('f_eff', 1.0) or 1.0)
     f_i = float(data.get('f_i', 1.0) or 1.0)
     f_w = float(data.get('f_w', 1.0) or 1.0)
+    f_c = float(data.get('f_c', 1.0) or 1.0)
+    f_l = float(data.get('f_l', 1.0) or 1.0)
+    f_m = float(data.get('f_m', 1.0) or 1.0)
     
     # Optional auxiliary data
     pae = float(data.get('pae', 0) or 0)
@@ -42,7 +45,7 @@ def calculate_eexi(data: dict) -> dict:
     ae_emissions = calc_ae_emissions(pae, cf_ae, sfc_ae)
     numerator = calc_total_numerator(me_emissions, ae_emissions)
     
-    attained = calc_attained_eexi(numerator, capacity, speed, f_i, f_w)
+    attained = calc_attained_eexi(numerator, capacity, speed, f_i, f_w, f_c, f_l, f_m)
     
     # Required EEXI uses DWT for most, GT for cruise/ro_ro_pass
     ref_capacity = gt if ship_type in ['ro_ro_pass', 'cruise'] else dwt
@@ -63,7 +66,10 @@ def calculate_eexi(data: dict) -> dict:
             cf_ae=cf_ae,
             sfc_ae=sfc_ae,
             f_i=f_i,
-            f_w=f_w
+            f_w=f_w,
+            f_c=f_c,
+            f_l=f_l,
+            f_m=f_m
         )
         if epl_data['epl_possible']:
             epl_data['epl_percentage'] = calc_epl_percentage(epl_data['limited_mcr'], mcr)

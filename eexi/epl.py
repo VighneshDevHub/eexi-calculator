@@ -17,13 +17,16 @@ def calc_epl(
     sfc_ae: float = 0.0,
     f_i: float = 1.0,
     f_w: float = 1.0,
+    f_c: float = 1.0,
+    f_l: float = 1.0,
+    f_m: float = 1.0,
 ) -> dict:
     """
     Calculate Engine Power Limitation target.
 
     Rearranges attained EEXI formula to solve for maximum allowable PME:
 
-        Max_PME = (Req_EEXI * capacity * v_ref * f_i * f_w
+        Max_PME = (Req_EEXI * capacity * v_ref * f_i * f_w * f_c * f_l * f_m
                    - PAE * CF_AE * SFC_AE)
                   / (CF_ME * SFC_ME)
 
@@ -49,7 +52,7 @@ def calc_epl(
         epl_possible   : bool   False if max_pme <= 0 (extreme non-compliance)
         note           : str    Human-readable guidance
     """
-    transport_work = required_eexi * capacity * v_ref * f_i * f_w
+    transport_work = required_eexi * capacity * v_ref * f_i * f_w * f_c * f_l * f_m
     ae_term = pae * cf_ae * sfc_ae if (pae > 0 and sfc_ae > 0) else 0.0
     max_pme = (transport_work - ae_term) / (cf_me * sfc_me)
 
@@ -66,7 +69,7 @@ def calc_epl(
             ),
         }
 
-    limited_mcr = max_pme / 0.75
+    limited_mcr = max_pme / 0.83
 
     return {
         "max_pme": round(max_pme, 2),
@@ -75,7 +78,8 @@ def calc_epl(
         "note": (
             f"Limit the installed MCR to {limited_mcr:.0f} kW "
             f"via Engine Power Limitation (EPL) or Shaft Power Limitation (ShaPoLi) "
-            f"to achieve compliance with the required EEXI."
+            f"to achieve compliance with the required EEXI. "
+            f"Note: For EEXI with EPL, PME is taken as 83% of the limited MCR."
         ),
     }
 

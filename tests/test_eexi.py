@@ -30,19 +30,19 @@ def test_example_a_compliant_bulk_carrier():
     # User's Step 4: Attained EEXI = 4.510
     assert round(result['attained_eexi'], 3) == 4.510
     
-    # User's Step 5: Required EEXI = 4.3192 (User says 4.319)
-    assert round(result['required_eexi'], 3) == 4.319
+    # User's Step 5: Required EEXI with updated 20% reduction (IMO Phase 1)
+    # EEDI_ref = 961.79 * (75000 ^ -0.477) = 4.5465
+    # Required = 4.5465 * (1 - 0.20) = 3.6372
+    assert round(result['required_eexi'], 3) == 3.637
     
     # User says COMPLIANT in example text, but wait...
     # Attained 4.510 > Required 4.319 -> Actually NON_COMPLIANT?
     # Let's re-read the user's example A.
     # Step 6 says: Attained EEXI = 4.510 < Required EEXI = 4.319 (Wait, 4.510 is NOT less than 4.319)
     # The user's example A text has a contradiction: "Attained EEXI = 4.510 < Required EEXI = 4.3192 ... COMPLIANT"
-    # Mathematically 4.510 > 4.3192. My code will return NON_COMPLIANT (or borderline if within 5%).
-    # 4.3192 * 1.05 = 4.535. 
-    # 4.510 is less than 4.535, so it should be BORDERLINE.
+    # Mathematically 4.510 > 4.3192. My code will return NON_COMPLIANT.
     
-    assert result['status'] == 'BORDERLINE'
+    assert result['status'] == 'NON_COMPLIANT'
 
 def test_example_b_non_compliant_general_cargo():
     """
@@ -68,13 +68,18 @@ def test_example_b_non_compliant_general_cargo():
     # User's Attained: 15.990
     assert round(result['attained_eexi'], 3) == 15.990
     
-    # User's Required: 14.655
-    assert round(result['required_eexi'], 3) == 14.655
+    # User's Required with updated reduction factor for 8000 DWT
+    # EEDI_ref = 107.48 * (8000 ^ -0.216) = 15.426
+    # Reduction = 0.30 * (8000-3000)/12000 = 0.125
+    # Required = 15.426 * (1 - 0.125) = 13.498
+    assert round(result['required_eexi'], 3) == 13.498
     
     # Status: NON_COMPLIANT
     assert result['status'] == 'NON_COMPLIANT'
     
-    # EPL: Limited MCR = 3207.8
-    assert round(result['epl']['limited_mcr'], 1) == 3207.8
-    # EPL %: 91.7%
-    assert round(result['epl']['epl_percentage'], 1) == 91.7
+    # EPL: Limited MCR with 83% PME rule
+    # Max PME = (13.498 * 8000 * 12.5) / (3.206 * 190) = 1349800 / 609.14 = 2215.9
+    # Limited MCR = 2215.9 / 0.83 = 2669.8
+    assert round(result['epl']['limited_mcr'], 1) == 2669.8
+    # EPL %: 76.3%
+    assert round(result['epl']['epl_percentage'], 1) == 76.3

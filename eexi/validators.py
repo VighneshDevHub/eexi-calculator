@@ -26,24 +26,69 @@ def validate_inputs(data: dict) -> tuple[bool, str]:
         if float(data['speed']) <= 0:
             return False, "Design speed must be greater than 0."
         
-        if data.get('dwt') and data.get('dwt') != "" and float(data['dwt']) < 0:
-            return False, "DWT cannot be negative."
-        if data.get('gt') and data.get('gt') != "" and float(data['gt']) < 0:
-            return False, "GT cannot be negative."
+        if data.get('dwt'):
+            try:
+                if float(data['dwt']) < 0:
+                    return False, "DWT cannot be negative."
+            except (ValueError, TypeError):
+                pass
+        if data.get('gt'):
+            try:
+                if float(data['gt']) < 0:
+                    return False, "GT cannot be negative."
+            except (ValueError, TypeError):
+                pass
             
         # Optional fields validation
-        if data.get('pae') and data.get('pae') != "" and float(data['pae']) < 0:
-            return False, "PAE cannot be negative."
-        if data.get('sfc_ae') and data.get('sfc_ae') != "" and float(data['sfc_ae']) < 0:
-            return False, "Auxiliary SFC cannot be negative."
-        if data.get('f_eff') and data.get('f_eff') != "":
-            f_eff = float(data['f_eff'])
-            if not (0.0 < f_eff <= 1.0):
-                return False, "f_eff must be between 0 and 1."
-        if data.get('f_i') and data.get('f_i') != "" and float(data['f_i']) <= 0:
-            return False, "f_i must be positive."
-        if data.get('f_w') and data.get('f_w') != "" and float(data['f_w']) <= 0:
-            return False, "f_w must be positive."
+        if data.get('pae'):
+            try:
+                if float(data['pae']) < 0:
+                    return False, "PAE cannot be negative."
+            except (ValueError, TypeError):
+                pass
+        if data.get('sfc_ae'):
+            try:
+                if float(data['sfc_ae']) < 0:
+                    return False, "Auxiliary SFC cannot be negative."
+            except (ValueError, TypeError):
+                pass
+        if data.get('f_eff'):
+            try:
+                f_eff = float(data['f_eff'])
+                if not (0.0 < f_eff <= 1.0):
+                    return False, "f_eff must be between 0 and 1."
+            except (ValueError, TypeError):
+                pass
+        if data.get('f_i'):
+            try:
+                if float(data['f_i']) <= 0:
+                    return False, "f_i must be positive."
+            except (ValueError, TypeError):
+                pass
+        if data.get('f_w'):
+            try:
+                if float(data['f_w']) <= 0:
+                    return False, "f_w must be positive."
+            except (ValueError, TypeError):
+                pass
+        if data.get('f_c'):
+            try:
+                if float(data['f_c']) <= 0:
+                    return False, "f_c must be positive."
+            except (ValueError, TypeError):
+                pass
+        if data.get('f_l'):
+            try:
+                if float(data['f_l']) <= 0:
+                    return False, "f_l must be positive."
+            except (ValueError, TypeError):
+                pass
+        if data.get('f_m'):
+            try:
+                if float(data['f_m']) <= 0:
+                    return False, "f_m must be positive."
+            except (ValueError, TypeError):
+                pass
 
     except ValueError:
         return False, "Invalid numeric input."

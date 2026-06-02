@@ -43,6 +43,37 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (form) {
+        const shipTypeSelect = document.getElementById('ship_type');
+        const dwtGroup = document.getElementById('dwt-group');
+        const gtGroup = document.getElementById('gt-group');
+
+        function updateCapacityFields() {
+            const shipType = shipTypeSelect.value;
+            if (shipType === 'ro_ro_pass' || shipType === 'cruise') {
+                gtGroup.style.display = 'block';
+                dwtGroup.style.display = 'none';
+                document.getElementById('gt').setAttribute('required', 'required');
+                document.getElementById('dwt').removeAttribute('required');
+            } else {
+                gtGroup.style.display = 'none';
+                dwtGroup.style.display = 'block';
+                document.getElementById('dwt').setAttribute('required', 'required');
+                document.getElementById('gt').removeAttribute('required');
+            }
+        }
+
+        if (shipTypeSelect) {
+            shipTypeSelect.addEventListener('change', updateCapacityFields);
+            // Run on load
+            if (shipTypeSelect.value) {
+                updateCapacityFields();
+            } else {
+                // Default: show both or hide both until type is selected?
+                // For now, let's just show DWT as default
+                gtGroup.style.display = 'none';
+            }
+        }
+
         form.addEventListener('submit', function(e) {
             // Set user's local time before submitting
             const now = new Date();
