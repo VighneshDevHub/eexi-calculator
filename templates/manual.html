@@ -4,83 +4,121 @@
 <div class="card">
     <div class="card-header">
         <h1><i class="fas fa-book-open"></i> User Manual & Technical Guide</h1>
-        <p class="subtitle">A comprehensive guide to understanding EEXI regulations and utilizing the calculator effectively.</p>
+        <p class="subtitle">A comprehensive guide to understanding EEXI regulations and utilizing the calculator effectively for maritime compliance.</p>
     </div>
 
-    <div class="manual-section">
-        <h2><i class="fas fa-info-circle"></i> 1. Introduction to EEXI</h2>
-        <p>The <strong>Energy Efficiency Existing Ship Index (EEXI)</strong> is a mandatory technical measure introduced by the International Maritime Organization (IMO) to reduce the carbon footprint of international shipping. It applies to existing ships above 400 GT falling under MARPOL Annex VI.</p>
-        <p>This application calculates the <strong>Attained EEXI</strong> based on your vessel's actual technical data and compares it against the <strong>Required EEXI</strong> reference lines established by the IMO.</p>
+    <!-- Navigation Tabs for Manual -->
+    <div class="manual-nav" style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+        <a href="#intro" class="btn btn-sm btn-outline"><i class="fas fa-info-circle"></i> Introduction</a>
+        <a href="#math" class="btn btn-sm btn-outline"><i class="fas fa-square-root-alt"></i> Methodology</a>
+        <a href="#workflow" class="btn btn-sm btn-outline"><i class="fas fa-list-ol"></i> Workflow</a>
+        <a href="#compliance" class="btn btn-sm btn-outline"><i class="fas fa-shield-alt"></i> Compliance</a>
+        <a href="#faq" class="btn btn-sm btn-outline"><i class="fas fa-question-circle"></i> FAQ</a>
     </div>
 
-    <div class="manual-section">
-        <h2><i class="fas fa-square-root-alt"></i> 2. Mathematical Methodology</h2>
+    <div id="intro" class="manual-section">
+        <h2><i class="fas fa-anchor"></i> 1. Introduction to EEXI</h2>
+        <p>The <strong>Energy Efficiency Existing Ship Index (EEXI)</strong> is a mandatory technical measure introduced by the International Maritime Organization (IMO) under MARPOL Annex VI. It applies to existing ships above 400 GT to ensure they meet minimum energy efficiency standards.</p>
+        <div class="form-section" style="margin-top: 1rem;">
+            <p><i class="fas fa-check-circle text-success"></i> <strong>Goal:</strong> Reduce the carbon intensity of international shipping by 40% by 2030.</p>
+            <p><i class="fas fa-check-circle text-success"></i> <strong>Scope:</strong> Bulk carriers, tankers, container ships, cruise ships, and more.</p>
+        </div>
+    </div>
+
+    <div id="math" class="manual-section">
+        <h2><i class="fas fa-calculator"></i> 2. Mathematical Methodology</h2>
+        <p>The application implements the official IMO EEXI calculation formula to determine the CO2 emissions per transport work.</p>
+        
         <div class="formula-box">
             Attained EEXI = (P_ME × C_F_ME × SFC_ME + P_AE × C_F_AE × SFC_AE) / (f_i × Capacity × V_ref × f_w)
         </div>
+
         <div class="form-grid">
             <div class="form-section">
-                <label>P_ME</label>
-                <p class="unit">75% of Main Engine MCR (Maximum Continuous Rating).</p>
+                <label>P_ME (Power)</label>
+                <p class="unit">75% of Main Engine MCR. This is the standardized power for EEXI evaluation.</p>
             </div>
             <div class="form-section">
-                <label>C_F</label>
-                <p class="unit">Carbon conversion factor based on fuel type (e.g., HFO = 3.114).</p>
+                <label>C_F (Carbon Factor)</label>
+                <p class="unit">HFO: 3.114 | LFO: 3.151 | MGO: 3.206 | LNG: 2.750</p>
             </div>
             <div class="form-section">
-                <label>SFC</label>
-                <p class="unit">Specific Fuel Consumption certified at 75% MCR load.</p>
+                <label>V_ref (Speed)</label>
+                <p class="unit">Vessel speed (knots) at P_ME power and design draft conditions.</p>
             </div>
             <div class="form-section">
                 <label>Capacity</label>
-                <p class="unit">DWT for most vessels; 70% DWT for containers; GT for cruise ships.</p>
+                <p class="unit">DWT for cargo ships; 70% DWT for containers; GT for cruise ships.</p>
             </div>
         </div>
     </div>
 
-    <div class="manual-section">
-        <h2><i class="fas fa-list-ol"></i> 3. Calculation Workflow</h2>
-        <div class="form-grid">
-            <div class="card" style="padding: 1.5rem; margin-bottom: 0;">
-                <h4 style="margin-bottom: 1rem;"><i class="fas fa-1"></i> Input Data</h4>
-                <p class="unit">Select ship type, enter DWT/GT, engine power, fuel type, and design speed.</p>
+    <div id="workflow" class="manual-section">
+        <h2><i class="fas fa-tasks"></i> 3. Step-by-Step Workflow</h2>
+        <div class="workflow-steps">
+            <div class="card" style="padding: 1.5rem; margin-bottom: 1rem; border-left: 4px solid var(--accent);">
+                <h4><span class="badge" style="background: var(--accent); color: white; border-radius: 50%; width: 25px; height: 25px; display: inline-flex; align-items: center; justify-content: center; margin-right: 10px;">1</span> Input Vessel Data</h4>
+                <p class="unit" style="margin-top: 0.5rem;">Select your ship type accurately. The tool uses this to pull specific IMO reference coefficients ($a$ and $c$).</p>
             </div>
-            <div class="card" style="padding: 1.5rem; margin-bottom: 0;">
-                <h4 style="margin-bottom: 1rem;"><i class="fas fa-2"></i> Verify Status</h4>
-                <p class="unit">The system instantly verifies compliance against IMO reference lines.</p>
+            <div class="card" style="padding: 1.5rem; margin-bottom: 1rem; border-left: 4px solid var(--accent);">
+                <h4><span class="badge" style="background: var(--accent); color: white; border-radius: 50%; width: 25px; height: 25px; display: inline-flex; align-items: center; justify-content: center; margin-right: 10px;">2</span> Define Engine Specs</h4>
+                <p class="unit" style="margin-top: 0.5rem;">Provide MCR and SFC from the Engine International Air Pollution Prevention (EIAPP) certificate.</p>
             </div>
-            <div class="card" style="padding: 1.5rem; margin-bottom: 0;">
-                <h4 style="margin-bottom: 1rem;"><i class="fas fa-3"></i> Get EPL</h4>
-                <p class="unit">For non-compliant ships, receive an automated Engine Power Limitation target.</p>
+            <div class="card" style="padding: 1.5rem; margin-bottom: 1rem; border-left: 4px solid var(--accent);">
+                <h4><span class="badge" style="background: var(--accent); color: white; border-radius: 50%; width: 25px; height: 25px; display: inline-flex; align-items: center; justify-content: center; margin-right: 10px;">3</span> Review Compliance</h4>
+                <p class="unit" style="margin-top: 0.5rem;">The system compares Attained vs. Required EEXI and provides a detailed compliance margin.</p>
             </div>
         </div>
     </div>
 
-    <div class="manual-section">
-        <h2><i class="fas fa-shield-alt"></i> 4. Compliance Interpretation</h2>
+    <div id="compliance" class="manual-section">
+        <h2><i class="fas fa-shield-virus"></i> 4. Compliance & EPL</h2>
+        <p>If your vessel is non-compliant, the tool automatically calculates the <strong>Engine Power Limitation (EPL)</strong> required to meet the target.</p>
         <div class="result-container">
-            <div class="result-card" style="background: rgba(16, 185, 129, 0.1); border-color: var(--success); color: var(--text-main);">
-                <div class="status-badge status-compliant" style="margin: 0 0 1rem 0;">COMPLIANT</div>
-                <p class="unit">Vessel meets requirements. The margin shows the efficiency headroom.</p>
+            <div class="result-card" style="background: rgba(16, 185, 129, 0.05); border-color: var(--success);">
+                <div class="status-badge status-compliant">COMPLIANT</div>
+                <p class="unit">Vessel meets MARPOL Annex VI requirements.</p>
             </div>
-            <div class="result-card" style="background: rgba(245, 158, 11, 0.1); border-color: var(--warning); color: var(--text-main);">
-                <div class="status-badge status-borderline" style="margin: 0 0 1rem 0;">BORDERLINE</div>
-                <p class="unit">Compliant but within 5% of the limit. Optimization is recommended.</p>
+            <div class="result-card" style="background: rgba(239, 68, 68, 0.05); border-color: var(--danger);">
+                <div class="status-badge status-non-compliant">NON-COMPLIANT</div>
+                <p class="unit">Action required. Use the calculated EPL target for technical modification.</p>
             </div>
-            <div class="result-card" style="background: rgba(239, 68, 68, 0.1); border-color: var(--danger); color: var(--text-main);">
-                <div class="status-badge status-non-compliant" style="margin: 0 0 1rem 0;">NON-COMPLIANT</div>
-                <p class="unit">Vessel fails the requirement. Engine Power Limitation (EPL) is mandatory.</p>
-            </div>
+        </div>
+    </div>
+
+    <div id="faq" class="manual-section">
+        <h2><i class="fas fa-question-circle"></i> 5. Frequently Asked Questions</h2>
+        <div class="form-section">
+            <p><strong>Q: What is the difference between EEDI and EEXI?</strong></p>
+            <p class="unit">EEDI is for new ships, while EEXI is for existing ships. Both use similar technical formulas but have different implementation timelines.</p>
+        </div>
+        <div class="form-section" style="margin-top: 1rem;">
+            <p><strong>Q: Can I use this for official class certification?</strong></p>
+            <p class="unit">This tool is for preliminary assessment. For official certification, please consult with a recognized organization (RO) or class society.</p>
         </div>
     </div>
 
     <div class="action-buttons">
         <a href="/" class="btn btn-primary">
-            <i class="fas fa-play"></i> Start New Calculation
+            <i class="fas fa-play"></i> Start Assessment
         </a>
         <a href="/history" class="btn btn-outline">
-            <i class="fas fa-history"></i> View History
+            <i class="fas fa-history"></i> History
         </a>
     </div>
 </div>
+
+<style>
+    .manual-nav .btn-outline {
+        border-color: var(--border);
+        color: var(--text-muted);
+    }
+    .manual-nav .btn-outline:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+    html {
+        scroll-behavior: smooth;
+    }
+</style>
 {% endblock %}
