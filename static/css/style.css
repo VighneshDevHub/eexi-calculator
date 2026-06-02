@@ -427,6 +427,8 @@ input::placeholder {
   overflow-x: auto;
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 1rem;
 }
 
 table {
@@ -606,8 +608,27 @@ th {
     transform: none;
   }
 
+  .logo {
+    font-size: 1.2rem;
+  }
+
+  .nav-links.active {
+    max-height: 350px;
+  }
+
+  .result-container {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+
   .card-header h1 {
     font-size: 1.75rem;
+  }
+
+  .section-title {
+    margin-left: -1.5rem;
+    font-size: 1.1rem;
   }
 
   .form-section {
@@ -626,6 +647,7 @@ th {
   .btn {
     width: 100%;
   }
+
   .manual-section h2 {
     font-size: 1.25rem;
   }
@@ -637,12 +659,17 @@ th {
 }
 
 @media (max-width: 480px) {
+  .container {
+    padding: 0 1rem;
+  }
+
   main {
     padding: 1.5rem 0;
   }
 
   .card {
-    padding: 1.5rem;
+    padding: 1.25rem;
+    border-radius: var(--radius-sm);
   }
 
   .card-header {
@@ -650,17 +677,36 @@ th {
     padding-bottom: 1rem;
   }
 
+  .card-header h1 {
+    font-size: 1.5rem;
+  }
+
   .section-title {
-    font-size: 1.1rem;
+    margin-left: -1.25rem;
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .form-section {
+    padding: 1.25rem;
   }
 
   .form-grid {
     grid-template-columns: 1fr;
+    gap: 1.25rem;
   }
 
   th,
   td {
-    padding: 1rem 0.75rem;
-    font-size: 0.85rem;
+    padding: 0.75rem 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .result-card {
+    padding: 1.5rem 1rem;
+  }
+
+  .result-value {
+    font-size: 1.75rem;
   }
 }
