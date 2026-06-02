@@ -1,0 +1,114 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="card manual-page">
+    <div class="card-header">
+        <h1><i class="fas fa-book"></i> User Manual & Technical Guide</h1>
+        <p class="subtitle">A comprehensive guide to understanding EEXI regulations and using this calculator.</p>
+    </div>
+
+    <div class="manual-section">
+        <h2><i class="fas fa-anchor"></i> 1. Introduction to EEXI</h2>
+        <p>The <strong>Energy Efficiency Existing Ship Index (EEXI)</strong> is a mandatory technical measure introduced by the IMO to reduce the carbon intensity of international shipping. It applies to all existing ships above 400 GT falling under MARPOL Annex VI.</p>
+        <p>This tool calculates the <strong>Attained EEXI</strong> based on your vessel's actual performance and compares it against the <strong>Required EEXI</strong> (the regulatory limit).</p>
+    </div>
+
+    <div class="manual-section">
+        <h2><i class="fas fa-calculator"></i> 2. Mathematical Methodology</h2>
+        <div class="formula-box">
+            <p><strong>Attained EEXI Formula:</strong></p>
+            <code>Attained EEXI = (P_ME * C_F_ME * SFC_ME + P_AE * C_F_AE * SFC_AE) / (f_i * Capacity * V_ref * f_w)</code>
+        </div>
+        <ul>
+            <li><strong>P_ME:</strong> 75% of Main Engine MCR.</li>
+            <li><strong>C_F:</strong> CO2 conversion factor based on fuel type.</li>
+            <li><strong>SFC:</strong> Specific Fuel Consumption (g/kWh).</li>
+            <li><strong>Capacity:</strong> DWT for most, 70% DWT for containers, GT for cruise ships.</li>
+            <li><strong>V_ref:</strong> Service speed at 75% MCR.</li>
+        </ul>
+    </div>
+
+    <div class="manual-section">
+        <h2><i class="fas fa-edit"></i> 3. How to Perform a Calculation</h2>
+        <ol class="manual-steps">
+            <li><strong>Vessel Particulars:</strong> Select your ship type carefully; this determines the reference line parameters (a, c) and reduction factor (X).</li>
+            <li><strong>Engine Data:</strong> Enter the MCR and SFC from your engine's technical file.</li>
+            <li><strong>Auxiliary Data:</strong> If your vessel has auxiliary engines, enter their power and consumption for a more accurate assessment.</li>
+            <li><strong>Correction Factors:</strong> Use 1.0 unless you have specific certified values for energy-saving devices.</li>
+        </ol>
+    </div>
+
+    <div class="manual-section">
+        <h2><i class="fas fa-check-circle"></i> 4. Understanding Results</h2>
+        <div class="status-grid">
+            <div class="status-item">
+                <span class="status-badge status-compliant">COMPLIANT</span>
+                <p>The vessel meets the IMO requirement. The positive margin indicates safety headroom.</p>
+            </div>
+            <div class="status-item">
+                <span class="status-badge status-borderline">BORDERLINE</span>
+                <p>Compliant, but within a 5% margin. Efficiency improvements may be needed in the future.</p>
+            </div>
+            <div class="status-item">
+                <span class="status-badge status-non-compliant">NON-COMPLIANT</span>
+                <p>Fails to meet the requirement. <strong>Engine Power Limitation (EPL)</strong> is usually required.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="manual-section">
+        <h2><i class="fas fa-tools"></i> 5. Engine Power Limitation (EPL)</h2>
+        <p>If your vessel is non-compliant, the system automatically calculates the <strong>Limited MCR</strong>. This is the maximum power setting allowed to bring the vessel into compliance without structural modifications.</p>
+    </div>
+
+    <div class="manual-section">
+        <h2><i class="fas fa-file-pdf"></i> 6. Technical Reports</h2>
+        <p>Every calculation can be exported as a professional PDF report. This report includes all input values, the mathematical derivation steps, and the final compliance verdict, suitable for submission to class or authorities.</p>
+    </div>
+</div>
+
+<style>
+    .manual-page {
+        line-height: 1.8;
+    }
+    .manual-section {
+        margin-bottom: 3rem;
+    }
+    .manual-section h2 {
+        color: var(--navy-blue);
+        border-bottom: 2px solid var(--ocean-blue);
+        padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
+        font-size: 1.4rem;
+    }
+    .formula-box {
+        background: var(--light-gray);
+        padding: 1.5rem;
+        border-radius: 8px;
+        border-left: 4px solid var(--ocean-blue);
+        margin: 1rem 0;
+        font-family: 'Courier New', Courier, monospace;
+    }
+    .manual-steps {
+        padding-left: 1.5rem;
+    }
+    .manual-steps li {
+        margin-bottom: 1rem;
+    }
+    .status-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1rem;
+    }
+    .status-item {
+        background: var(--light-gray);
+        padding: 1.5rem;
+        border-radius: 8px;
+        text-align: center;
+    }
+    .status-item .status-badge {
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
