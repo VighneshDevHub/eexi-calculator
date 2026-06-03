@@ -106,16 +106,20 @@ def generate_pdf_report(vessel_data, result_data):
     ]))
     elements.append(t2)
     
-    # EPL Recommendation
+    # EPL / MCRlim
     if result_data.get('epl'):
-        elements.append(Paragraph("EPL Recommendation", section_style))
+        elements.append(Paragraph("EPL / MCRlim Recommendation", section_style))
         if result_data['epl'].get('epl_possible'):
             epl_info = [
-                ["Limited MCR", f"{result_data['epl']['limited_mcr']} kW"],
-                ["EPL Percentage", f"{result_data['epl']['epl_percentage']}%"],
-                ["Max Allowable PME", f"{result_data['epl']['max_pme']} kW"]
+                ["Calculated MCRlim", f"{result_data['epl']['limited_mcr']} kW"],
+                ["Max PME (83% of MCRlim)", f"{result_data['epl']['max_pme']} kW"],
+                ["Estimated Speed Vref,lim", f"{result_data['epl']['new_v_ref']} kn"]
             ]
-            elements.append(Paragraph(result_data['epl']['note'], styles['Normal']))
+            if result_data['compliant']:
+                elements.append(Paragraph("The vessel is compliant. For reference, the MCRlim required to exactly match the target is shown below.", styles['Normal']))
+            else:
+                elements.append(Paragraph(result_data['epl']['note'], styles['Normal']))
+                
             elements.append(Spacer(1, 10))
             t3 = Table(epl_info, colWidths=[200, 250])
             t3.setStyle(TableStyle([

@@ -58,6 +58,18 @@ def calc_me_emissions(pme: float, cf: float, sfc: float) -> float:
     return pme * cf * sfc
 
 
+def get_default_pae(mcr: float) -> float:
+    """
+    Calculate default auxiliary engine power (PAE) per IMO guidelines.
+    
+    For MCR >= 10,000 kW: PAE = (0.025 * MCR) + 250
+    For MCR < 10,000 kW:  PAE = 0.05 * MCR
+    """
+    if mcr >= 10000:
+        return (0.025 * mcr) + 250
+    return 0.05 * mcr
+
+
 def calc_ae_emissions(pae: float, cf_ae: float, sfc_ae: float) -> float:
     """
     Auxiliary engine CO2 emission term (numerator contribution).

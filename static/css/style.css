@@ -401,6 +401,19 @@ input::placeholder {
   background: rgba(255, 255, 255, 0.08);
 }
 
+.result-card.highlight {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid var(--accent);
+}
+
+.epl-card {
+  border-left: 5px solid var(--primary);
+}
+
+.epl-card.border-success {
+  border-left: 5px solid var(--success);
+}
+
 .card .result-card {
   background: white;
   border: 1px solid var(--border);

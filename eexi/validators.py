@@ -89,6 +89,20 @@ def validate_inputs(data: dict) -> tuple[bool, str]:
                     return False, "f_m must be positive."
             except (ValueError, TypeError):
                 pass
+        
+        # Advanced EPL fields
+        if data.get('sfc_lim'):
+            try:
+                if float(data['sfc_lim']) <= 0:
+                    return False, "SFC at MCRlim must be greater than 0."
+            except (ValueError, TypeError):
+                pass
+        if data.get('n_exponent'):
+            try:
+                if float(data['n_exponent']) <= 0:
+                    return False, "Exponent n must be positive."
+            except (ValueError, TypeError):
+                pass
 
     except ValueError:
         return False, "Invalid numeric input."

@@ -2,7 +2,7 @@
 Main EEXI calculation orchestrator.
 """
 from .ship_params import get_cf, get_capacity, SHIP_PARAMS
-from .emissions import calc_pme, calc_me_emissions, calc_ae_emissions, calc_total_numerator
+from .emissions import calc_pme, calc_me_emissions, calc_ae_emissions, calc_total_numerator, get_default_pae
 from .eexi import calc_attained_eexi, calc_required_eexi, check_compliance
 from .epl import calc_epl, calc_epl_percentage
 
@@ -29,6 +29,9 @@ def calculate_eexi(data: dict) -> dict:
     
     # Optional auxiliary data
     pae = float(data.get('pae', 0) or 0)
+    if not pae:
+        pae = get_default_pae(mcr)
+        
     sfc_ae = float(data.get('sfc_ae', 0) or 0)
     fuel_type_ae = data.get('fuel_type_ae')
     if not fuel_type_ae: # Handle empty string or None
@@ -53,28 +56,31 @@ def calculate_eexi(data: dict) -> dict:
     
     compliance = check_compliance(attained, required)
     
-    # 3. EPL Recommendation if non-compliant
-    epl_recommendation = None
-    if not compliance['compliant']:
-        epl_data = calc_epl(
-            required_eexi=required,
-            capacity=capacity,
-            v_ref=speed,
-            cf_me=cf_me,
-            sfc_me=sfc,
-            pae=pae,
-            cf_ae=cf_ae,
-            sfc_ae=sfc_ae,
-            f_i=f_i,
-            f_w=f_w,
-            f_c=f_c,
-            f_l=f_l,
-            f_m=f_m
-        )
-        if epl_data['epl_possible']:
-            epl_data['epl_percentage'] = calc_epl_percentage(epl_data['limited_mcr'], mcr)
-        epl_recommendation = epl_data
-
+    # 3. EPL / MCRlim Calculation (Always calculated for reference)
+    sfc_lim = float(data.get('sfc_lim', 0) or sfc)
+    n_exponent = float(data.get('n_exponent', 0) or 0)
+    
+    epl_data = calc_epl(
+        required_eexi=required,
+        capacity=capacity,
+        v_ref=speed,
+        cf_me=cf_me,
+        sfc_me=sfc_lim,
+        pae=pae,
+        cf_ae=cf_ae,
+        sfc_ae=sfc_ae,
+        f_i=f_i,
+        f_w=f_w,
+        f_c=f_c,
+        f_l=f_l,
+        f_m=f_m,
+        ship_type=ship_type,
+        p_me_original=pme,
+        n_exponent=n_exponent
+    )
+    if epl_data['epl_possible']:
+        epl_data['epl_percentage'] = calc_epl_percentage(epl_data['limited_mcr'], mcr)
+    
     # 4. Prepare Results
     return {
         "attained_eexi": round(attained, 4),
@@ -82,7 +88,7 @@ def calculate_eexi(data: dict) -> dict:
         "status": compliance['status'],
         "margin": compliance['margin'],
         "compliant": compliance['compliant'],
-        "epl": epl_recommendation,
+        "epl": epl_data,
         "ship_details": {
             "type": ship_type,
             "capacity": capacity,

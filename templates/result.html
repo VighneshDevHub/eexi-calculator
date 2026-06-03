@@ -39,27 +39,40 @@
   </div>
 </div>
 
-{% if not result.compliant and result.epl %}
-<div class="card epl-card">
-  <h2><i class="fas fa-tools"></i> Engine Power Limitation (EPL)</h2>
+{% if result.epl %}
+<div class="card epl-card {% if result.compliant %}border-success{% endif %}">
+  <h2>
+    <i class="fas fa-tools"></i> Engine Power Limitation (EPL) / MCR<sub
+      >lim</sub
+    >
+  </h2>
   {% if result.epl.epl_possible %}
-  <p class="subtitle mb-4">{{ result.epl.note }}</p>
+  <p class="subtitle mb-4">
+    {% if not result.compliant %} {{ result.epl.note }} {% else %} The vessel is
+    currently compliant. For reference, the calculated
+    <strong>MCR<sub>lim</sub></strong> to exactly match the required EEXI is
+    shown below. {% endif %}
+  </p>
   <div class="result-container">
-    <div class="result-card">
+    <div class="result-card highlight">
       <div class="result-value">
         {{ result.epl.limited_mcr }} <small style="font-size: 1rem">kW</small>
       </div>
-      <div class="result-label">Limited MCR Target</div>
-    </div>
-    <div class="result-card">
-      <div class="result-value">{{ result.epl.epl_percentage }}%</div>
-      <div class="result-label">% of Installed MCR</div>
+      <div class="result-label">Calculated MCR<sub>lim</sub></div>
     </div>
     <div class="result-card">
       <div class="result-value">
         {{ result.epl.max_pme }} <small style="font-size: 1rem">kW</small>
       </div>
-      <div class="result-label">Max Reference PME</div>
+      <div class="result-label">
+        Max P<sub>ME,lim</sub> (83% of MCR<sub>lim</sub>)
+      </div>
+    </div>
+    <div class="result-card">
+      <div class="result-value">
+        {{ result.epl.new_v_ref }} <small style="font-size: 1rem">kn</small>
+      </div>
+      <div class="result-label">Estimated Speed V<sub>ref,lim</sub></div>
     </div>
   </div>
   {% else %}

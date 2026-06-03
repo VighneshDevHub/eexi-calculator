@@ -100,8 +100,24 @@
             </div>
         </div>
 
-        <!-- Section 4: Correction Factors -->
+        <!-- Section 4: Advanced EPL Options -->
         <div class="form-section">
+            <h3 class="section-title"><i class="fas fa-cogs"></i> Advanced EPL Projection <small>(Optional)</small></h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="sfc_lim">SFC at MCR<sub>lim</sub> <span class="unit">[g/kWh]</span></label>
+                    <input type="number" step="0.01" id="sfc_lim" name="sfc_lim" placeholder="e.g. 173.83" value="{{ form_data.sfc_lim if form_data else '' }}">
+                    <small class="help-text">Leave blank to use original SFC.</small>
+                </div>
+                <div class="form-group">
+                    <label for="n_exponent">Speed-Power Exponent (n)</label>
+                    <input type="number" step="0.001" id="n_exponent" name="n_exponent" placeholder="e.g. 3.0 or 7.0" value="{{ form_data.n_exponent if form_data else '' }}">
+                    <small class="help-text">Determines V<sub>ref,lim</sub> reduction. Default is ship-type specific (3.0 to 6.5).</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 5: Correction Factors -->
             <h3 class="section-title"><i class="fas fa-sliders-h"></i> Correction Factors <small>(Defaults to 1.0)</small></h3>
             <div class="form-grid">
                 <div class="form-group">
