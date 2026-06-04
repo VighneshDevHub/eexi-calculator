@@ -133,3 +133,110 @@ def generate_pdf_report(vessel_data, result_data):
     
     doc.build(elements)
     return file_path
+
+def generate_cii_pdf_report(vessel_data, result_data):
+    """
+    Generates a PDF report for the CII calculation.
+    """
+    reports_dir = os.path.join(os.getcwd(), 'reports', 'generated')
+    if not os.path.exists(reports_dir):
+        os.makedirs(reports_dir)
+        
+    time_for_filename = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename = f"CII_Report_{result_data['year']}_{time_for_filename}.pdf"
+    file_path = os.path.join(reports_dir, filename)
+    
+    doc = SimpleDocTemplate(file_path, pagesize=A4)
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle(
+        'TitleStyle',
+        parent=styles['Heading1'],
+        fontSize=24,
+        textColor=colors.HexColor('#0f172a'),
+        alignment=1,
+        spaceAfter=30
+    )
+    
+    section_style = ParagraphStyle(
+        'SectionStyle',
+        parent=styles['Heading2'],
+        fontSize=14,
+        textColor=colors.HexColor('#3b82f6'),
+        spaceBefore=20,
+        spaceAfter=10
+    )
+
+    elements = []
+    
+    # Title
+    elements.append(Paragraph("CII Compliance Report", title_style))
+    elements.append(Paragraph(f"Assessment Year: {result_data['year']}", styles['Normal']))
+    elements.append(Paragraph(f"Report Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
+    elements.append(Spacer(1, 20))
+    
+    # Vessel & Operating Data
+    elements.append(Paragraph("Vessel & Operating Data", section_style))
+    vessel_info = [
+        ["Ship Type", result_data['inputs_echo']['ship_type'].replace('_', ' ').title()],
+        ["Deadweight (DWT)", f"{result_data['inputs_echo']['dwt']} tonnes"],
+        ["Gross Tonnage (GT)", f"{result_data['inputs_echo']['gt']}"],
+        ["Distance Sailed", f"{result_data['distance_nm']} nm"],
+        ["Capacity (used for CII)", f"{result_data['capacity']}"]
+    ]
+    
+    t1 = Table(vessel_info, colWidths=[200, 250])
+    t1.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f8fafc')),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('PADDING', (0, 0), (-1, -1), 6),
+    ]))
+    elements.append(t1)
+    
+    # Results
+    elements.append(Paragraph("CII Calculation Results", section_style))
+    rating = result_data['rating']['rating']
+    rating_colors = {'A': colors.green, 'B': colors.lightgreen, 'C': colors.orange, 'D': colors.red, 'E': colors.darkred}
+    
+    results_info = [
+        ["Attained CII", f"{result_data['attained_cii']} gCO2/t·nm"],
+        ["Required CII", f"{result_data['required_cii']} gCO2/t·nm"],
+        ["CII Rating", Paragraph(f"<b>{rating}</b>", ParagraphStyle('Rating', textColor=rating_colors.get(rating, colors.black), fontSize=14))],
+        ["Margin vs Required", f"{result_data['rating']['margin_pct']}%"],
+        ["Rating Description", result_data['rating']['description']]
+    ]
+    
+    t2 = Table(results_info, colWidths=[200, 250])
+    t2.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f8fafc')),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('PADDING', (0, 0), (-1, -1), 6),
+        ('VALIGN', (0, -1), (-1, -1), 'TOP'),
+    ]))
+    elements.append(t2)
+    
+    # Corrections
+    if result_data.get('corrections_applied'):
+        elements.append(Paragraph("Correction Factors Applied (MEPC.355(78))", section_style))
+        for corr in result_data['corrections_applied']:
+            elements.append(Paragraph(f"• {corr}", styles['Normal']))
+            
+    # Boundaries
+    elements.append(Paragraph("Rating Boundaries", section_style))
+    b = result_data['rating']['boundaries']
+    bound_info = [
+        ["A/B Boundary", f"{b['A']}"],
+        ["B/C Boundary", f"{b['B']}"],
+        ["C/D Boundary", f"{b['C']}"],
+        ["D/E Boundary", f"{b['D']}"]
+    ]
+    t3 = Table(bound_info, colWidths=[200, 250])
+    t3.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f8fafc')),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('PADDING', (0, 0), (-1, -1), 6),
+    ]))
+    elements.append(t3)
+    
+    doc.build(elements)
+    return file_path

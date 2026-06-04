@@ -1,135 +1,90 @@
 {% extends "layout.html" %} {% block content %}
-<div class="result-header card">
-  <div class="container">
-    <h1>EEXI Compliance Assessment</h1>
+<div class="card">
+  <div class="card-header text-center">
+    <h1>EEXI Assessment Results</h1>
     <p class="subtitle">
       Vessel: <strong>{{ result.vessel_name or 'Unnamed Vessel' }}</strong>
     </p>
-    <div
-      class="status-badge status-{{ result.status.lower().replace('_', '-') }}"
-    >
-      <i
-        class="fas {% if result.compliant %}fa-check-circle{% else %}fa-exclamation-triangle{% endif %}"
-      ></i>
-      {{ result.status.replace('_', ' ') }}
-    </div>
 
-    <div class="result-container">
-      <div class="result-card">
-        <div class="result-value">{{ result.attained_eexi }}</div>
-        <div class="result-label">
-          Attained EEXI <span class="unit">(gCO2/t·nm)</span>
-        </div>
-      </div>
-      <div class="result-card">
-        <div class="result-value">{{ result.required_eexi }}</div>
-        <div class="result-label">
-          Required EEXI <span class="unit">(gCO2/t·nm)</span>
-        </div>
-      </div>
-      <div class="result-card">
-        <div
-          class="result-value {% if result.margin >= 0 %}text-success{% else %}text-danger{% endif %}"
-        >
-          {{ result.margin }}%
-        </div>
-        <div class="result-label">Compliance Margin</div>
-      </div>
+    <div class="mt-4">
+      {% if result.compliant %}
+      <span class="badge badge-success"
+        ><i class="fas fa-check-circle"></i> {{ (result.status or
+        '').replace('_', ' ') }}</span
+      >
+      {% else %}
+      <span class="badge badge-danger"
+        ><i class="fas fa-exclamation-triangle"></i> {{ (result.status or
+        '').replace('_', ' ') }}</span
+      >
+      {% endif %}
     </div>
   </div>
-</div>
 
-{% if result.epl %}
-<div class="card epl-card {% if result.compliant %}border-success{% endif %}">
-  <h2>
-    <i class="fas fa-tools"></i> Engine Power Limitation (EPL) / MCR<sub
-      >lim</sub
-    >
-  </h2>
-  {% if result.epl.epl_possible %}
-  <p class="subtitle mb-4">
-    {% if not result.compliant %} {{ result.epl.note }} {% else %} The vessel is
-    currently compliant. For reference, the calculated
-    <strong>MCR<sub>lim</sub></strong> to exactly match the required EEXI is
-    shown below. {% endif %}
-  </p>
-  <div class="result-container">
-    <div class="result-card highlight">
-      <div class="result-value">
-        {{ result.epl.limited_mcr }} <small style="font-size: 1rem">kW</small>
-      </div>
-      <div class="result-label">Calculated MCR<sub>lim</sub></div>
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-label">Attained EEXI</div>
+      <div class="metric-value">{{ result.attained_eexi }}</div>
+      <div class="metric-unit">gCO₂ / (t·nm)</div>
     </div>
-    <div class="result-card">
-      <div class="result-value">
-        {{ result.epl.max_pme }} <small style="font-size: 1rem">kW</small>
-      </div>
-      <div class="result-label">
-        Max P<sub>ME,lim</sub> (83% of MCR<sub>lim</sub>)
-      </div>
+    <div class="metric-card">
+      <div class="metric-label">Required EEXI</div>
+      <div class="metric-value">{{ result.required_eexi }}</div>
+      <div class="metric-unit">gCO₂ / (t·nm)</div>
     </div>
-    <div class="result-card">
-      <div class="result-value">
-        {{ result.epl.new_v_ref }} <small style="font-size: 1rem">kn</small>
+    <div class="metric-card">
+      <div class="metric-label">Compliance Margin</div>
+      <div
+        class="metric-value"
+        style="color: {% if result.margin >= 0 %}var(--success){% else %}var(--danger){% endif %};"
+      >
+        {{ result.margin }}%
       </div>
-      <div class="result-label">Estimated Speed V<sub>ref,lim</sub></div>
+      <div class="metric-unit">Relative to target</div>
     </div>
   </div>
-  {% else %}
-  <div class="error-msg">
-    <i class="fas fa-times-circle"></i> {{ result.epl.note }}
+
+  {% if result.epl %}
+  <div
+    class="form-section"
+    style="border-color: {% if result.compliant %}var(--success){% else %}var(--warning){% endif %};"
+  >
+    <h3 class="section-title">
+      <i class="fas fa-tools"></i> Engine Power Limitation (EPL)
+    </h3>
+
+    {% if result.epl.epl_possible %}
+    <p class="mb-4">{{ result.epl.note }}</p>
+    <div class="grid grid-3">
+      <div class="metric-card">
+        <div class="metric-label">Calculated MCR<sub>lim</sub></div>
+        <div class="metric-value">{{ result.epl.limited_mcr }}</div>
+        <div class="metric-unit">kW</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Max P<sub>ME,lim</sub></div>
+        <div class="metric-value">{{ result.epl.max_pme }}</div>
+        <div class="metric-unit">kW</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">V<sub>ref,lim</sub></div>
+        <div class="metric-value">{{ result.epl.new_v_ref }}</div>
+        <div class="metric-unit">knots</div>
+      </div>
+    </div>
+    {% else %}
+    <div class="badge badge-danger">{{ result.epl.note }}</div>
+    {% endif %}
   </div>
   {% endif %}
-</div>
-{% endif %}
 
-<div class="card">
-  <div class="section-title">
-    <i class="fas fa-microchip"></i> Detailed Calculation Breakdown
+  <div class="grid grid-2 mt-4">
+    <a href="/" class="btn btn-outline">
+      <i class="fas fa-redo"></i> New Assessment
+    </a>
+    <a href="/report/{{ result.vessel_id }}" class="btn btn-primary">
+      <i class="fas fa-file-pdf"></i> Download Report
+    </a>
   </div>
-  <div class="table-responsive">
-    <table class="details-table">
-      <thead>
-        <tr>
-          <th colspan="2">
-            <i class="fas fa-info-circle"></i> Vessel & Capacity
-          </th>
-          <th colspan="2"><i class="fas fa-fire"></i> Emissions & Power</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <th>Ship Type</th>
-          <td>{{ result.ship_details.type.replace('_', ' ').title() }}</td>
-          <th>Reference Power (PME)</th>
-          <td>{{ result.ship_details.pme }} kW</td>
-        </tr>
-        <tr>
-          <th>EEXI Capacity</th>
-          <td>{{ result.ship_details.capacity | round(2) }}</td>
-          <th>ME Emissions Term</th>
-          <td>{{ result.ship_details.me_emissions | round(2) }} gCO2/nm</td>
-        </tr>
-        <tr>
-          <th>Numerator (Total)</th>
-          <td>{{ result.ship_details.numerator | round(2) }} gCO2/nm</td>
-          <th>AE Emissions Term</th>
-          <td>{{ result.ship_details.ae_emissions | round(2) }} gCO2/nm</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<div class="action-buttons">
-  <a href="/" class="btn btn-secondary">
-    <i class="fas fa-redo"></i> New Calculation
-  </a>
-  <a href="/report/{{ result.vessel_id }}" class="btn btn-primary">
-    <i class="fas fa-file-pdf"></i> Download PDF Technical Report
-  </a>
-  <a href="/history" class="btn btn-outline">
-    <i class="fas fa-history"></i> History
-  </a>
 </div>
 {% endblock %}

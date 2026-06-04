@@ -3,8 +3,9 @@ from datetime import datetime
 from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for
 from database.db import db, init_db, Vessel
 from eexi.calculator import calculate_eexi
+from eexi.cii import calculate_cii, CII_REDUCTION_FACTORS
 from eexi.validators import validate_inputs
-from reports.pdf_generator import generate_pdf_report
+from reports.pdf_generator import generate_pdf_report, generate_cii_pdf_report
 from eexi.ship_params import SHIP_LABELS, CF_LABELS
 
 app = Flask(__name__)
@@ -76,6 +77,54 @@ def history():
 @app.route('/manual')
 def manual():
     return render_template('manual.html')
+
+@app.route('/cii')
+def cii_page():
+    return render_template('cii.html', 
+                         cii_years=sorted(CII_REDUCTION_FACTORS.keys()))
+
+@app.route('/api/calculate-cii', methods=['POST'])
+def api_calculate_cii():
+    """
+    CII calculation endpoint.
+    MEPC.352-355(78) — attained annual CII with correction factors.
+    """
+    data = request.get_json(force=True, silent=True)
+    if not data:
+        return jsonify({"error": "Request body must be valid JSON."}), 400
+    
+    missing = [f for f in ["ship_type", "distance_nm"] if not data.get(f)]
+    if missing:
+        return jsonify({"error": f"Missing required fields: {missing}"}), 400
+
+    # Ensure at least one fuel is provided
+    fuel_keys = ["fc_hfo", "fc_mdo", "fc_lng", "fc_methanol", "fc_lpg_propane", "fc_lpg_butane", "fc_ethane"]
+    if not any(float(data.get(k, 0) or 0) > 0 for k in fuel_keys):
+        return jsonify({"error": "At least one fuel consumption value must be provided."}), 400
+
+    try:
+        result = calculate_cii(data)
+        return jsonify(result), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": "Internal server error."}), 500
+
+@app.route('/api/cii-report', methods=['POST'])
+def cii_report():
+    """
+    Generates a CII PDF report from the calculation results.
+    """
+    data = request.get_json(force=True, silent=True)
+    if not data:
+        return jsonify({"error": "No result data provided."}), 400
+    
+    try:
+        pdf_path = generate_cii_pdf_report({}, data)
+        return send_file(pdf_path, as_attachment=True, download_name=f"CII_Report_{data['year']}.pdf")
+    except Exception as e:
+        app.logger.error(f"Error generating CII report: {e}")
+        return jsonify({"error": "Failed to generate report."}), 500
 
 @app.route('/report/<int:vessel_id>')
 def report(vessel_id):

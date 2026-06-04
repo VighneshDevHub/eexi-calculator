@@ -3,8 +3,8 @@
 {% block content %}
 <div class="card">
     <div class="card-header">
-        <h1><i class="fas fa-ship"></i> Vessel Particulars</h1>
-        <p class="subtitle">Enter the ship's design and engine parameters to calculate EEXI compliance according to IMO MEPC.350(78) standards.</p>
+        <h1><i class="fas fa-ship"></i> EEXI Compliance</h1>
+        <p class="subtitle">Enter vessel design parameters for IMO MEPC.350(78) assessment.</p>
     </div>
     
     {% if error %}
@@ -13,18 +13,18 @@
     </div>
     {% endif %}
 
-    <form action="{{ url_for('calculate') }}" method="POST" class="eexi-form" id="eexiForm">
+    <form action="{{ url_for('calculate') }}" method="POST" id="eexiForm">
         <input type="hidden" id="user_local_time" name="user_local_time">
-        <!-- Section 1: Basic Information -->
+        
         <div class="form-section">
             <h3 class="section-title"><i class="fas fa-info-circle"></i> Basic Information</h3>
-            <div class="form-grid">
-                <div class="form-group">
+            <div class="grid grid-2">
+                <div class="field-group">
                     <label for="vessel_name">Vessel Name</label>
                     <input type="text" id="vessel_name" name="vessel_name" placeholder="e.g. MV Ocean Star" value="{{ form_data.vessel_name if form_data else '' }}">
                 </div>
                 
-                <div class="form-group">
+                <div class="field-group">
                     <label for="ship_type">Ship Type</label>
                     <select id="ship_type" name="ship_type" required>
                         <option value="" disabled {{ 'selected' if not form_data else '' }}>Select Ship Type</option>
@@ -33,34 +33,37 @@
                         {% endfor %}
                     </select>
                 </div>
+            </div>
 
-                <div class="form-group" id="dwt-group">
+            <div class="grid grid-2">
+                <div class="field-group" id="dwt-group">
                     <label for="dwt">Deadweight (DWT) <span class="unit">[tonnes]</span></label>
                     <input type="number" step="0.01" id="dwt" name="dwt" placeholder="e.g. 75000" value="{{ form_data.dwt if form_data else '' }}">
                 </div>
 
-                <div class="form-group" id="gt-group">
+                <div class="field-group" id="gt-group">
                     <label for="gt">Gross Tonnage (GT)</label>
                     <input type="number" step="0.01" id="gt" name="gt" placeholder="e.g. 50000" value="{{ form_data.gt if form_data else '' }}">
                 </div>
             </div>
         </div>
 
-        <!-- Section 2: Main Engine -->
         <div class="form-section">
-            <h3 class="section-title"><i class="fas fa-engine"></i> Main Engine (ME)</h3>
-            <div class="form-grid">
-                <div class="form-group">
+            <h3 class="section-title"><i class="fas fa-microchip"></i> Main Engine (ME)</h3>
+            <div class="grid grid-2">
+                <div class="field-group">
                     <label for="mcr">Main Engine MCR <span class="unit">[kW]</span></label>
                     <input type="number" step="0.01" id="mcr" name="mcr" required placeholder="e.g. 12000" value="{{ form_data.mcr if form_data else '' }}">
                 </div>
 
-                <div class="form-group">
+                <div class="field-group">
                     <label for="sfc">ME SFC at 75% MCR <span class="unit">[g/kWh]</span></label>
                     <input type="number" step="0.01" id="sfc" name="sfc" required placeholder="e.g. 175" value="{{ form_data.sfc if form_data else '' }}">
                 </div>
+            </div>
 
-                <div class="form-group">
+            <div class="grid grid-2">
+                <div class="field-group">
                     <label for="fuel_type">ME Fuel Type</label>
                     <select id="fuel_type" name="fuel_type" required>
                         {% for key, label in CF_LABELS.items() %}
@@ -69,29 +72,28 @@
                     </select>
                 </div>
 
-                <div class="form-group">
+                <div class="field-group">
                     <label for="speed">Design Speed (V_ref) <span class="unit">[knots]</span></label>
                     <input type="number" step="0.01" id="speed" name="speed" required placeholder="e.g. 14.5" value="{{ form_data.speed if form_data else '' }}">
                 </div>
             </div>
         </div>
 
-        <!-- Section 3: Auxiliary Engine -->
         <div class="form-section">
-            <h3 class="section-title"><i class="fas fa-bolt"></i> Auxiliary Engine (AE) <small>(Optional)</small></h3>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label for="pae">AE Rated Power <span class="unit">[kW]</span></label>
+            <h3 class="section-title"><i class="fas fa-bolt"></i> Auxiliary Engine (AE)</h3>
+            <div class="grid grid-3">
+                <div class="field-group">
+                    <label for="pae">AE Power <span class="unit">[kW]</span></label>
                     <input type="number" step="0.01" id="pae" name="pae" placeholder="e.g. 500" value="{{ form_data.pae if form_data else '' }}">
                 </div>
-                <div class="form-group">
+                <div class="field-group">
                     <label for="sfc_ae">AE SFC <span class="unit">[g/kWh]</span></label>
                     <input type="number" step="0.01" id="sfc_ae" name="sfc_ae" placeholder="e.g. 190" value="{{ form_data.sfc_ae if form_data else '' }}">
                 </div>
-                <div class="form-group">
+                <div class="field-group">
                     <label for="fuel_type_ae">AE Fuel Type</label>
                     <select id="fuel_type_ae" name="fuel_type_ae">
-                        <option value="">Same as Main Engine</option>
+                        <option value="">Same as ME</option>
                         {% for key, label in CF_LABELS.items() %}
                         <option value="{{ key }}" {{ 'selected' if form_data and form_data.fuel_type_ae == key else '' }}>{{ label }}</option>
                         {% endfor %}
@@ -100,59 +102,32 @@
             </div>
         </div>
 
-        <!-- Section 4: Advanced EPL Options -->
-        <div class="form-section">
-            <h3 class="section-title"><i class="fas fa-cogs"></i> Advanced EPL Projection <small>(Optional)</small></h3>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label for="sfc_lim">SFC at MCR<sub>lim</sub> <span class="unit">[g/kWh]</span></label>
-                    <input type="number" step="0.01" id="sfc_lim" name="sfc_lim" placeholder="e.g. 173.83" value="{{ form_data.sfc_lim if form_data else '' }}">
-                    <small class="help-text">Leave blank to use original SFC.</small>
-                </div>
-                <div class="form-group">
-                    <label for="n_exponent">Speed-Power Exponent (n)</label>
-                    <input type="number" step="0.001" id="n_exponent" name="n_exponent" placeholder="e.g. 3.0 or 7.0" value="{{ form_data.n_exponent if form_data else '' }}">
-                    <small class="help-text">Determines V<sub>ref,lim</sub> reduction. Default is ship-type specific (3.0 to 6.5).</small>
-                </div>
-            </div>
-        </div>
-
-        <!-- Section 5: Correction Factors -->
-            <h3 class="section-title"><i class="fas fa-sliders-h"></i> Correction Factors <small>(Defaults to 1.0)</small></h3>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label for="f_eff">Efficiency Factor (f_eff)</label>
-                    <input type="number" step="0.001" id="f_eff" name="f_eff" placeholder="1.0" min="0" max="1" value="{{ form_data.f_eff if form_data else '1.0' }}">
-                    <small class="help-text">For shaft generators / waste-heat recovery.</small>
-                </div>
-                <div class="form-group">
-                    <label for="f_i">Capacity Factor (f_i)</label>
-                    <input type="number" step="0.001" id="f_i" name="f_i" placeholder="1.0" value="{{ form_data.f_i if form_data else '1.0' }}">
-                </div>
-                <div class="form-group">
-                    <label for="f_w">Weather Factor (f_w)</label>
-                    <input type="number" step="0.001" id="f_w" name="f_w" placeholder="1.0" value="{{ form_data.f_w if form_data else '1.0' }}">
-                </div>
-                <div class="form-group">
-                    <label for="f_c">Cubic Capacity Factor (f_c)</label>
-                    <input type="number" step="0.001" id="f_c" name="f_c" placeholder="1.0" value="{{ form_data.f_c if form_data else '1.0' }}">
-                </div>
-                <div class="form-group">
-                    <label for="f_l">General Cargo Factor (f_l)</label>
-                    <input type="number" step="0.001" id="f_l" name="f_l" placeholder="1.0" value="{{ form_data.f_l if form_data else '1.0' }}">
-                </div>
-                <div class="form-group">
-                    <label for="f_m">Ice Class Factor (f_m)</label>
-                    <input type="number" step="0.001" id="f_m" name="f_m" placeholder="1.0" value="{{ form_data.f_m if form_data else '1.0' }}">
-                </div>
-            </div>
-        </div>
-
-        <div class="mt-8">
-            <button type="submit" class="btn btn-primary btn-block" style="height: 60px; font-size: 1.2rem;">
+        <div class="mt-4">
+            <button type="submit" class="btn btn-primary btn-block">
                 <i class="fas fa-calculator"></i> Run Compliance Assessment
             </button>
         </div>
     </form>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('user_local_time').value = new Date().toLocaleString();
+    const shipType = document.getElementById('ship_type');
+    const dwtGroup = document.getElementById('dwt-group');
+    const gtGroup = document.getElementById('gt-group');
+    function updateCapacityFields() {
+        const type = shipType.value;
+        if (type === 'ro_ro_pass' || type === 'cruise') {
+            dwtGroup.style.display = 'none';
+            gtGroup.style.display = 'block';
+        } else {
+            dwtGroup.style.display = 'block';
+            gtGroup.style.display = 'none';
+        }
+    }
+    shipType.addEventListener('change', updateCapacityFields);
+    updateCapacityFields();
+</script>
 {% endblock %}

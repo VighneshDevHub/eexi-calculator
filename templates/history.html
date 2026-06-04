@@ -1,14 +1,14 @@
 {% extends "layout.html" %} {% block content %}
 <div class="card">
   <div class="card-header">
-    <h1><i class="fas fa-history"></i> Calculation History</h1>
+    <h1><i class="fas fa-history"></i> Assessment History</h1>
     <p class="subtitle">
-      Review all previous EEXI assessments stored in the local database.
+      Review previous EEXI calculations from the local database.
     </p>
   </div>
 
-  <div class="table-responsive">
-    <table class="history-table">
+  <div class="table-container">
+    <table>
       <thead>
         <tr>
           <th>Date</th>
@@ -17,25 +17,36 @@
           <th>Attained</th>
           <th>Required</th>
           <th>Status</th>
-          <th>Action</th>
+          <th class="text-center">Action</th>
         </tr>
       </thead>
       <tbody>
         {% for vessel in vessels %}
         <tr>
-          <td>{{ vessel.created_at }}</td>
+          <td style="font-size: 0.8rem; color: var(--text-muted)">
+            {{ vessel.created_at }}
+          </td>
           <td><strong>{{ vessel.name or 'Unnamed Vessel' }}</strong></td>
-          <td>{{ vessel.ship_type.replace('_', ' ').title() }}</td>
+          <td>{{ (vessel.ship_type or '').replace('_', ' ').title() }}</td>
           <td>{{ vessel.attained_eexi }}</td>
           <td>{{ vessel.required_eexi }}</td>
           <td>
+            {% if vessel.status and 'COMPLIANT' in vessel.status and 'NON' not
+            in vessel.status %}
             <span
-              class="status-badge status-{{ vessel.status.lower().replace('_', '-') }}"
+              class="badge badge-success"
+              style="padding: 0.25rem 0.75rem; font-size: 0.7rem"
+              >Compliant</span
             >
-              {{ vessel.status.replace('_', ' ') }}
-            </span>
+            {% else %}
+            <span
+              class="badge badge-danger"
+              style="padding: 0.25rem 0.75rem; font-size: 0.7rem"
+              >Non-Compliant</span
+            >
+            {% endif %}
           </td>
-          <td>
+          <td class="text-center">
             <a href="/report/{{ vessel.id }}" class="btn btn-outline btn-sm">
               <i class="fas fa-file-pdf"></i> Report
             </a>
@@ -45,24 +56,15 @@
         <tr>
           <td
             colspan="7"
-            style="text-align: center; padding: 3rem; color: var(--text-muted)"
+            class="text-center"
+            style="padding: 3rem; color: var(--text-muted)"
           >
-            <i
-              class="fas fa-folder-open fa-3x"
-              style="display: block; margin-bottom: 1rem; opacity: 0.3"
-            ></i>
-            No calculation history found.
+            No records found. Start a new assessment to see history.
           </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
-</div>
-
-<div class="mt-8" style="text-align: center">
-  <a href="/" class="btn btn-secondary">
-    <i class="fas fa-plus"></i> New Calculation
-  </a>
 </div>
 {% endblock %}

@@ -157,3 +157,5 @@ cython_debug/
 reports/generated/
 instance/vessels.db
 EEXI_Phase3_Python_Code/
+EEXI_CII_Phase_Complete/
+
