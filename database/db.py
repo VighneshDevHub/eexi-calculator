@@ -41,7 +41,8 @@ class Vessel(db.Model):
     def to_dict(self):
         return {
             'id': self.id,
-            'name': self.name,
+            'calc_type': 'EEXI',
+            'name': self.name or 'Unnamed Vessel',
             'ship_type': self.ship_type,
             'dwt': self.dwt,
             'gt': self.gt,
@@ -55,11 +56,62 @@ class Vessel(db.Model):
             'f_eff': self.f_eff,
             'f_i': self.f_i,
             'f_w': self.f_w,
+            'attained': self.attained_eexi,
+            'required': self.required_eexi,
             'attained_eexi': self.attained_eexi,
             'required_eexi': self.required_eexi,
             'status': self.status,
             'margin': self.margin,
-            'created_at': self.user_local_time if self.user_local_time else self.created_at.strftime('%Y-%m-%d %H:%M:%S UTC')
+            'created_at': self.user_local_time if self.user_local_time else self.created_at.strftime('%Y-%m-%d %H:%M')
+        }
+
+class CIICalculation(db.Model):
+    __tablename__ = 'cii_calculations'
+    id = db.Column(db.Integer, primary_key=True)
+    ship_type = db.Column(db.String(50), nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+    attained_cii = db.Column(db.Float, nullable=False)
+    required_cii = db.Column(db.Float, nullable=False)
+    rating = db.Column(db.String(1), nullable=False)
+    margin_pct = db.Column(db.Float, nullable=True)
+    full_data = db.Column(db.Text, nullable=True) # JSON string
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'calc_type': 'CII',
+            'name': f"{self.ship_type.replace('_', ' ').title()} ({self.year})",
+            'ship_type': self.ship_type,
+            'attained': round(self.attained_cii, 4),
+            'required': round(self.required_cii, 4),
+            'status': f"RATING {self.rating}",
+            'margin': self.margin_pct,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M')
+        }
+
+class EGBPCalculation(db.Model):
+    __tablename__ = 'egbp_calculations'
+    id = db.Column(db.Integer, primary_key=True)
+    mass_flow = db.Column(db.Float, nullable=False)
+    temperature = db.Column(db.Float, nullable=False)
+    total_pa = db.Column(db.Float, nullable=False)
+    max_bp = db.Column(db.Float, nullable=False)
+    status = db.Column(db.String(20), nullable=False)
+    full_data = db.Column(db.Text, nullable=True) # JSON string
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'calc_type': 'EGBP',
+            'name': f"Back Pressure Test",
+            'ship_type': f"{self.mass_flow} kg/s @ {self.temperature}°C",
+            'attained': f"{int(self.total_pa)} Pa",
+            'required': f"{int(self.max_bp)} Pa",
+            'status': self.status,
+            'margin': round(self.max_bp - self.total_pa, 0),
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M')
         }
 
 def init_db(app):

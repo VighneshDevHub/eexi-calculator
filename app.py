@@ -1,12 +1,13 @@
 import os
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for
-from database.db import db, init_db, Vessel
-from eexi.calculator import calculate_eexi
-from eexi.cii import calculate_cii, CII_REDUCTION_FACTORS
-from eexi.validators import validate_inputs
-from reports.pdf_generator import generate_pdf_report, generate_cii_pdf_report
-from eexi.ship_params import SHIP_LABELS, CF_LABELS
+from database.db import db, init_db, Vessel, CIICalculation, EGBPCalculation
+from calculators.eexi import calculate_eexi
+from calculators.cii import calculate_cii, CII_REDUCTION_FACTORS
+from calculators.egbp import calculate_egbp, ELEMENT_LABELS, ENGINE_PRESETS, ROUGHNESS_MAP
+from calculators.utils.validators import validate_inputs
+from calculators.utils.ship_params import SHIP_LABELS, CF_LABELS
+from reports.pdf_generator import generate_pdf_report, generate_cii_pdf_report, generate_egbp_pdf_report
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///vessels.db'
@@ -17,7 +18,12 @@ init_db(app)
 
 @app.context_processor
 def inject_now():
-    return dict(now=datetime.now(), SHIP_LABELS=SHIP_LABELS, CF_LABELS=CF_LABELS)
+    return dict(
+        now=datetime.now(), 
+        SHIP_LABELS=SHIP_LABELS, 
+        CF_LABELS=CF_LABELS,
+        version="2.0.0"
+    )
 
 @app.route('/')
 def index():
@@ -29,16 +35,12 @@ def calculate():
         return redirect(url_for('index'))
         
     data = request.form.to_dict()
-    
-    # Validate inputs
     is_valid, error_msg = validate_inputs(data)
     if not is_valid:
         return render_template('index.html', error=error_msg, form_data=data)
     
-    # Perform calculation
     result = calculate_eexi(data)
     
-    # Save to database
     vessel = Vessel(
         name=data.get('vessel_name'),
         ship_type=data['ship_type'],
@@ -63,16 +65,20 @@ def calculate():
     db.session.add(vessel)
     db.session.commit()
     
-    # Store ID in result for PDF generation
     result['vessel_id'] = vessel.id
     result['vessel_name'] = vessel.name
-    
     return render_template('result.html', result=result)
 
 @app.route('/history')
 def history():
-    vessels = Vessel.query.order_by(Vessel.created_at.desc()).all()
-    return render_template('history.html', vessels=[v.to_dict() for v in vessels])
+    eexi = Vessel.query.order_by(Vessel.created_at.desc()).all()
+    cii = CIICalculation.query.order_by(CIICalculation.created_at.desc()).all()
+    egbp = EGBPCalculation.query.order_by(EGBPCalculation.created_at.desc()).all()
+    
+    all_calcs = [v.to_dict() for v in eexi] + [c.to_dict() for c in cii] + [e.to_dict() for e in egbp]
+    all_calcs.sort(key=lambda x: x['created_at'], reverse=True)
+    
+    return render_template('history.html', vessels=all_calcs)
 
 @app.route('/manual')
 def manual():
@@ -80,76 +86,127 @@ def manual():
 
 @app.route('/cii')
 def cii_page():
-    return render_template('cii.html', 
-                         cii_years=sorted(CII_REDUCTION_FACTORS.keys()))
+    return render_template('cii.html', cii_years=sorted(CII_REDUCTION_FACTORS.keys()))
+
+@app.route('/egbp')
+def egbp_page():
+    return render_template('egbp.html', 
+                         element_types=ELEMENT_LABELS,
+                         engine_presets=ENGINE_PRESETS,
+                         roughness_options=ROUGHNESS_MAP)
+
+@app.route('/admin')
+def admin_dashboard():
+    vessels = Vessel.query.all()
+    stats = {
+        'total_calculations': len(vessels),
+        'compliant_count': len([v for v in vessels if v.status == 'COMPLIANT']),
+        'non_compliant_count': len([v for v in vessels if v.status == 'NON_COMPLIANT']),
+    }
+    return render_template('admin.html', stats=stats, recent_vessels=vessels[-10:])
+
+import json
 
 @app.route('/api/calculate-cii', methods=['POST'])
 def api_calculate_cii():
-    """
-    CII calculation endpoint.
-    MEPC.352-355(78) — attained annual CII with correction factors.
-    """
     data = request.get_json(force=True, silent=True)
-    if not data:
-        return jsonify({"error": "Request body must be valid JSON."}), 400
-    
-    missing = [f for f in ["ship_type", "distance_nm"] if not data.get(f)]
-    if missing:
-        return jsonify({"error": f"Missing required fields: {missing}"}), 400
-
-    # Ensure at least one fuel is provided
-    fuel_keys = ["fc_hfo", "fc_mdo", "fc_lng", "fc_methanol", "fc_lpg_propane", "fc_lpg_butane", "fc_ethane"]
-    if not any(float(data.get(k, 0) or 0) > 0 for k in fuel_keys):
-        return jsonify({"error": "At least one fuel consumption value must be provided."}), 400
-
+    if not data: return jsonify({"error": "Invalid JSON"}), 400
     try:
         result = calculate_cii(data)
+        
+        # Save to history
+        cii_calc = CIICalculation(
+            ship_type=data['ship_type'],
+            year=data['year'],
+            attained_cii=result['attained_cii'],
+            required_cii=result['required_cii'],
+            rating=result['rating']['rating'],
+            margin_pct=result['rating']['margin_pct'],
+            full_data=json.dumps(result)
+        )
+        db.session.add(cii_calc)
+        db.session.commit()
+        
         return jsonify(result), 200
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 400
     except Exception as e:
-        return jsonify({"error": "Internal server error."}), 500
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/calculate-egbp', methods=['POST'])
+def api_calculate_egbp():
+    data = request.get_json(force=True, silent=True)
+    if not data: return jsonify({"error": "Invalid JSON"}), 400
+    try:
+        result = calculate_egbp(data)
+        
+        # Save to history
+        egbp_calc = EGBPCalculation(
+            mass_flow=float(data['mass_flow_kgs']),
+            temperature=float(data['temp_tc_c']),
+            total_pa=result['total_pressure_pa'],
+            max_bp=float(data['max_bp_pa']),
+            status=result['status'],
+            full_data=json.dumps(result)
+        )
+        db.session.add(egbp_calc)
+        db.session.commit()
+        
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/cii-report-history/<int:calc_id>')
+def cii_report_history(calc_id):
+    calc = CIICalculation.query.get_or_404(calc_id)
+    if not calc.full_data:
+        return "No data available for this report", 404
+    data = json.loads(calc.full_data)
+    try:
+        pdf_path = generate_cii_pdf_report({}, data)
+        return send_file(pdf_path, as_attachment=True, download_name=f"CII_Report_{calc.year}.pdf")
+    except Exception as e:
+        return str(e), 500
+
+@app.route('/egbp-report-history/<int:calc_id>')
+def egbp_report_history(calc_id):
+    calc = EGBPCalculation.query.get_or_404(calc_id)
+    if not calc.full_data:
+        return "No data available for this report", 404
+    data = json.loads(calc.full_data)
+    try:
+        pdf_path = generate_egbp_pdf_report(data)
+        return send_file(pdf_path, as_attachment=True, download_name=f"EGBP_Report.pdf")
+    except Exception as e:
+        return str(e), 500
 
 @app.route('/api/cii-report', methods=['POST'])
 def cii_report():
-    """
-    Generates a CII PDF report from the calculation results.
-    """
     data = request.get_json(force=True, silent=True)
-    if not data:
-        return jsonify({"error": "No result data provided."}), 400
-    
     try:
         pdf_path = generate_cii_pdf_report({}, data)
-        return send_file(pdf_path, as_attachment=True, download_name=f"CII_Report_{data['year']}.pdf")
+        return send_file(pdf_path, as_attachment=True, download_name=f"CII_Report_{data.get('year', '2024')}.pdf")
     except Exception as e:
-        app.logger.error(f"Error generating CII report: {e}")
-        return jsonify({"error": "Failed to generate report."}), 500
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/egbp-report', methods=['POST'])
+def egbp_report():
+    data = request.get_json(force=True, silent=True)
+    try:
+        pdf_path = generate_egbp_pdf_report(data)
+        return send_file(pdf_path, as_attachment=True, download_name=f"EGBP_Report_{datetime.now().strftime('%Y%m%d')}.pdf")
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/report/<int:vessel_id>')
 def report(vessel_id):
     vessel = Vessel.query.get_or_404(vessel_id)
-    
-    # Re-calculate result for report generation
     data = {
-        'ship_type': vessel.ship_type,
-        'dwt': vessel.dwt,
-        'gt': vessel.gt,
-        'mcr': vessel.mcr,
-        'sfc': vessel.sfc,
-        'fuel_type': vessel.fuel,
-        'speed': vessel.speed,
-        'pae': vessel.pae,
-        'sfc_ae': vessel.sfc_ae,
-        'fuel_type_ae': vessel.fuel_ae,
-        'f_eff': vessel.f_eff,
-        'f_i': vessel.f_i,
-        'f_w': vessel.f_w
+        'ship_type': vessel.ship_type, 'dwt': vessel.dwt, 'gt': vessel.gt,
+        'mcr': vessel.mcr, 'sfc': vessel.sfc, 'fuel_type': vessel.fuel,
+        'speed': vessel.speed, 'pae': vessel.pae, 'sfc_ae': vessel.sfc_ae,
+        'fuel_type_ae': vessel.fuel_ae, 'f_eff': vessel.f_eff, 'f_i': vessel.f_i, 'f_w': vessel.f_w
     }
     result = calculate_eexi(data)
-    
     pdf_path = generate_pdf_report(vessel.to_dict(), result)
-    
     return send_file(pdf_path, as_attachment=True, download_name=f"EEXI_Report_{vessel_id}.pdf")
 
 if __name__ == '__main__':

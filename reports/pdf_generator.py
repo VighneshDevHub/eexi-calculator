@@ -115,7 +115,7 @@ def generate_pdf_report(vessel_data, result_data):
                 ["Max PME (83% of MCRlim)", f"{result_data['epl']['max_pme']} kW"],
                 ["Estimated Speed Vref,lim", f"{result_data['epl']['new_v_ref']} kn"]
             ]
-            if result_data['compliant']:
+            if result_data.get('status') == 'COMPLIANT':
                 elements.append(Paragraph("The vessel is compliant. For reference, the MCRlim required to exactly match the target is shown below.", styles['Normal']))
             else:
                 elements.append(Paragraph(result_data['epl']['note'], styles['Normal']))
@@ -130,6 +130,109 @@ def generate_pdf_report(vessel_data, result_data):
             elements.append(t3)
         else:
             elements.append(Paragraph(result_data['epl']['note'], ParagraphStyle('Error', textColor=colors.red)))
+    
+    doc.build(elements)
+    return file_path
+
+def generate_egbp_pdf_report(result_data):
+    """
+    Generates a PDF report for the EGBP calculation.
+    """
+    reports_dir = os.path.join(os.getcwd(), 'reports', 'generated')
+    if not os.path.exists(reports_dir):
+        os.makedirs(reports_dir)
+        
+    time_for_filename = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename = f"EGBP_Report_{time_for_filename}.pdf"
+    file_path = os.path.join(reports_dir, filename)
+    
+    doc = SimpleDocTemplate(file_path, pagesize=A4)
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle(
+        'TitleStyle',
+        parent=styles['Heading1'],
+        fontSize=24,
+        textColor=colors.HexColor('#0f172a'),
+        alignment=1,
+        spaceAfter=30
+    )
+    
+    section_style = ParagraphStyle(
+        'SectionStyle',
+        parent=styles['Heading2'],
+        fontSize=14,
+        textColor=colors.HexColor('#10b981'),
+        spaceBefore=20,
+        spaceAfter=10
+    )
+
+    elements = []
+    
+    # Title
+    elements.append(Paragraph("Exhaust Gas Back Pressure Report", title_style))
+    elements.append(Paragraph(f"Report Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
+    elements.append(Spacer(1, 20))
+    
+    # System Parameters
+    elements.append(Paragraph("System Parameters", section_style))
+    sys_info = [
+        ["Mass Flow", f"{result_data['mass_flow_kgs']} kg/s"],
+        ["Temperature", f"{result_data['temp_tc_c']} °C"],
+        ["Pipe Roughness", f"{result_data['roughness_key'].replace('_', ' ').title()}"],
+        ["Max Allowed BP", f"{result_data['max_bp_pa']} Pa"]
+    ]
+    
+    t1 = Table(sys_info, colWidths=[200, 250])
+    t1.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f8fafc')),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('PADDING', (0, 0), (-1, -1), 6),
+    ]))
+    elements.append(t1)
+    
+    # Overall Results
+    elements.append(Paragraph("Overall Assessment", section_style))
+    status_color = colors.green if result_data['status'] == 'PASSED' else colors.red
+    
+    results_info = [
+        ["Total Back Pressure", f"{result_data['total_pressure_pa']} Pa"],
+        ["Total Back Pressure", f"{result_data['total_pressure_mmwc']} mmWC"],
+        ["Compliance Status", Paragraph(f"<b>{result_data['status']}</b>", ParagraphStyle('Status', textColor=status_color, fontSize=14))],
+        ["Safety Margin", f"{result_data['margin_pa']} Pa"]
+    ]
+    
+    t2 = Table(results_info, colWidths=[200, 250])
+    t2.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f8fafc')),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('PADDING', (0, 0), (-1, -1), 6),
+    ]))
+    elements.append(t2)
+    
+    # Breakdown Table
+    elements.append(Paragraph("Pipeline Elements Breakdown", section_style))
+    table_data = [["#", "Element", "Velocity (m/s)", "ξ", "ΔP (Pa)"]]
+    for el in result_data['elements']:
+        table_data.append([
+            str(el['position']),
+            el['element_type'].replace('_', ' ').title(),
+            f"{el['velocity']:.2f}",
+            f"{el['xi']:.3f}",
+            f"{el['pressure_loss_pa']:.1f}"
+        ])
+    
+    t3 = Table(table_data, colWidths=[30, 150, 90, 90, 90])
+    t3.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0f172a')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('PADDING', (0, 0), (-1, -1), 6),
+    ]))
+    elements.append(t3)
     
     doc.build(elements)
     return file_path

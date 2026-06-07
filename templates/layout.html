@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>EEXI Calculator - Maritime Compliance</title>
+    <title>Maritime Engineering Suite - Compliance & Analysis</title>
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/style.css') }}"
@@ -18,55 +18,113 @@
     />
   </head>
   <body>
-    <nav class="navbar">
-      <div class="container">
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
         <a href="{{ url_for('index') }}" class="logo">
-          <i class="fas fa-compass"></i> Goltens<span>EEXI</span>
+          <i class="fas fa-ship"></i>
+          <span>MARITIME SUITE</span>
         </a>
-        <div class="nav-right">
-          <button class="menu-toggle" aria-label="Toggle menu">
+        <button class="menu-btn" id="closeSidebar">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <nav class="sidebar-nav">
+        <a
+          href="{{ url_for('index') }}"
+          class="nav-item {{ 'active' if request.path == url_for('index') }}"
+        >
+          <i class="fas fa-calculator"></i>
+          <span>EEXI Calculator</span>
+        </a>
+        <a
+          href="{{ url_for('cii_page') }}"
+          class="nav-item {{ 'active' if request.path == url_for('cii_page') }}"
+        >
+          <i class="fas fa-chart-line"></i>
+          <span>CII Calculator</span>
+        </a>
+        <a
+          href="{{ url_for('egbp_page') }}"
+          class="nav-item {{ 'active' if request.path == url_for('egbp_page') }}"
+        >
+          <i class="fas fa-wind"></i>
+          <span>EGBP Calculator</span>
+        </a>
+        <a
+          href="{{ url_for('history') }}"
+          class="nav-item {{ 'active' if request.path == url_for('history') }}"
+        >
+          <i class="fas fa-file-invoice"></i>
+          <span>Assessment History</span>
+        </a>
+        <a
+          href="{{ url_for('admin_dashboard') }}"
+          class="nav-item {{ 'active' if request.path == url_for('admin_dashboard') }}"
+        >
+          <i class="fas fa-user-shield"></i>
+          <span>Admin Dashboard</span>
+        </a>
+        <a
+          href="{{ url_for('manual') }}"
+          class="nav-item {{ 'active' if request.path == url_for('manual') }}"
+        >
+          <i class="fas fa-book"></i>
+          <span>User Manual</span>
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <p>&copy; {{ now.year }} Goltens</p>
+        <p>v{{ version }} | Compliance Tool</p>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="top-bar">
+        <div style="display: flex; align-items: center; gap: 1rem">
+          <button class="menu-btn" id="openSidebar">
             <i class="fas fa-bars"></i>
           </button>
-          <ul class="nav-links">
-            <li>
-              <a href="{{ url_for('index') }}"
-                ><i class="fas fa-calculator"></i> EEXI</a
-              >
-            </li>
-            <li>
-              <a href="{{ url_for('cii_page') }}"
-                ><i class="fas fa-chart-line"></i> CII</a
-              >
-            </li>
-            <li>
-              <a href="{{ url_for('history') }}"
-                ><i class="fas fa-history"></i> History</a
-              >
-            </li>
-            <li>
-              <a href="{{ url_for('manual') }}"
-                ><i class="fas fa-book"></i> User Manual</a
-              >
-            </li>
-          </ul>
+          <h1 class="page-title">{% block title %}Dashboard{% endblock %}</h1>
         </div>
-      </div>
-    </nav>
+        <div class="user-profile">
+          <span
+            ><i class="fas fa-calendar-alt"></i> {{ now.strftime('%d %b %Y')
+            }}</span
+          >
+          <span><i class="fas fa-user-circle"></i> Engineering Team</span>
+        </div>
+      </header>
 
-    <main class="container">{% block content %}{% endblock %}</main>
+      {% block content %}{% endblock %}
+    </main>
 
-    <footer class="footer">
-      <div class="container">
-        <p>
-          &copy; {{ now.year if now else '2026' }} Goltens EEXI Compliance Tool.
-          All Rights Reserved.
-        </p>
-        <p style="font-size: 0.8rem; margin-top: 0.5rem; opacity: 0.7">
-          Developed for IMO MEPC.350(78) Regulatory Standards.
-        </p>
-      </div>
-    </footer>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const sidebar = document.getElementById("sidebar");
+        const overlay = document.getElementById("sidebarOverlay");
+        const openBtn = document.getElementById("openSidebar");
+        const closeBtn = document.getElementById("closeSidebar");
 
+        function toggleSidebar() {
+          sidebar.classList.toggle("show");
+          overlay.classList.toggle("show");
+        }
+
+        if (openBtn) openBtn.addEventListener("click", toggleSidebar);
+        if (closeBtn) closeBtn.addEventListener("click", toggleSidebar);
+        if (overlay) overlay.addEventListener("click", toggleSidebar);
+
+        // Close sidebar on nav item click (mobile)
+        document.querySelectorAll(".nav-item").forEach((item) => {
+          item.addEventListener("click", () => {
+            if (window.innerWidth <= 992) {
+              toggleSidebar();
+            }
+          });
+        });
+      });
+    </script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     {% block scripts %}{% endblock %}
   </body>

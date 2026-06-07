@@ -1,4 +1,5 @@
-{% extends "layout.html" %} {% block content %}
+{% extends "layout.html" %} {% block title %}Calculation History{% endblock %}
+{% block content %}
 <div class="card">
   <div class="card-header">
     <h1><i class="fas fa-history"></i> Assessment History</h1>
@@ -12,10 +13,10 @@
       <thead>
         <tr>
           <th>Date</th>
-          <th>Vessel Name</th>
-          <th>Ship Type</th>
+          <th>Type</th>
+          <th>Vessel / Parameters</th>
           <th>Attained</th>
-          <th>Required</th>
+          <th>Required / Limit</th>
           <th>Status</th>
           <th class="text-center">Action</th>
         </tr>
@@ -23,33 +24,46 @@
       <tbody>
         {% for vessel in vessels %}
         <tr>
-          <td style="font-size: 0.8rem; color: var(--text-muted)">
-            {{ vessel.created_at }}
-          </td>
-          <td><strong>{{ vessel.name or 'Unnamed Vessel' }}</strong></td>
-          <td>{{ (vessel.ship_type or '').replace('_', ' ').title() }}</td>
-          <td>{{ vessel.attained_eexi }}</td>
-          <td>{{ vessel.required_eexi }}</td>
+          <td>{{ vessel.created_at }}</td>
           <td>
-            {% if vessel.status and 'COMPLIANT' in vessel.status and 'NON' not
-            in vessel.status %}
-            <span
-              class="badge badge-success"
-              style="padding: 0.25rem 0.75rem; font-size: 0.7rem"
-              >Compliant</span
+            <span class="badge" style="background: var(--primary); color: white"
+              >{{ vessel.calc_type }}</span
             >
+          </td>
+          <td><strong>{{ vessel.name }}</strong></td>
+          <td>{{ vessel.attained }}</td>
+          <td>{{ vessel.required }}</td>
+          <td>
+            {% if 'COMPLIANT' in vessel.status or 'PASSED' in vessel.status or
+            'RATING A' in vessel.status or 'RATING B' in vessel.status or
+            'RATING C' in vessel.status %}
+            <span class="badge badge-success">{{ vessel.status }}</span>
             {% else %}
-            <span
-              class="badge badge-danger"
-              style="padding: 0.25rem 0.75rem; font-size: 0.7rem"
-              >Non-Compliant</span
-            >
+            <span class="badge badge-danger">{{ vessel.status }}</span>
             {% endif %}
           </td>
           <td class="text-center">
+            {% if vessel.calc_type == 'EEXI' %}
             <a href="/report/{{ vessel.id }}" class="btn btn-outline btn-sm">
               <i class="fas fa-file-pdf"></i> Report
             </a>
+            {% elif vessel.calc_type == 'CII' %}
+            <a
+              href="/cii-report-history/{{ vessel.id }}"
+              class="btn btn-outline btn-sm"
+            >
+              <i class="fas fa-file-pdf"></i> Report
+            </a>
+            {% elif vessel.calc_type == 'EGBP' %}
+            <a
+              href="/egbp-report-history/{{ vessel.id }}"
+              class="btn btn-outline btn-sm"
+            >
+              <i class="fas fa-file-pdf"></i> Report
+            </a>
+            {% else %}
+            <span class="unit">N/A</span>
+            {% endif %}
           </td>
         </tr>
         {% else %}

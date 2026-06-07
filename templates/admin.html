@@ -1,0 +1,81 @@
+{% extends "layout.html" %} {% block title %}Admin Dashboard{% endblock %} {%
+block content %}
+<div class="metrics-grid">
+  <div class="metric-card">
+    <div class="metric-label">Total Calculations</div>
+    <div class="metric-value">{{ stats.total_calculations }}</div>
+    <div class="metric-unit">Assessments</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">Compliant Vessels</div>
+    <div class="metric-value" style="color: var(--success)">
+      {{ stats.compliant_count }}
+    </div>
+    <div class="metric-unit">Green Status</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">Non-Compliant</div>
+    <div class="metric-value" style="color: var(--danger)">
+      {{ stats.non_compliant_count }}
+    </div>
+    <div class="metric-unit">Action Required</div>
+  </div>
+</div>
+
+<div class="card">
+  <div
+    style="
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    "
+  >
+    <h3 class="section-title">
+      <i class="fas fa-list"></i> Recent EEXI Calculations
+    </h3>
+    <a href="{{ url_for('history') }}" class="btn btn-outline btn-sm"
+      >View All</a
+    >
+  </div>
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Vessel Name</th>
+          <th>Ship Type</th>
+          <th>Attained</th>
+          <th>Required</th>
+          <th>Status</th>
+          <th class="text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for vessel in recent_vessels %}
+        <tr>
+          <td><strong>{{ vessel.name }}</strong></td>
+          <td>{{ vessel.ship_type.replace('_', ' ').title() }}</td>
+          <td>{{ vessel.attained_eexi }}</td>
+          <td>{{ vessel.required_eexi }}</td>
+          <td>
+            <span
+              class="badge {{ 'badge-success' if vessel.status == 'COMPLIANT' else 'badge-danger' }}"
+            >
+              {{ vessel.status }}
+            </span>
+          </td>
+          <td class="text-center">
+            <a
+              href="{{ url_for('report', vessel_id=vessel.id) }}"
+              class="btn btn-outline btn-sm"
+            >
+              <i class="fas fa-file-pdf"></i> Report
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

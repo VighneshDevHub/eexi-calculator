@@ -45,16 +45,28 @@
   </div>
 
   {% if result.epl %}
-  <div
-    class="form-section"
-    style="border-color: {% if result.compliant %}var(--success){% else %}var(--warning){% endif %};"
-  >
+  <div class="form-section">
     <h3 class="section-title">
-      <i class="fas fa-tools"></i> Engine Power Limitation (EPL)
+      <i class="fas fa-tools"></i> EPL / MCR<sub>lim</sub> Recommendation
     </h3>
 
     {% if result.epl.epl_possible %}
-    <p class="mb-4">{{ result.epl.note }}</p>
+    <div
+      style="background: #dcfce7; padding: 1.5rem; border-radius: var(--radius-sm); border-left: 5px solid var(--success); margin-bottom: 2rem;"
+    >
+      <p style="font-weight: 700; color: #166534; font-size: 1.1rem; margin: 0;">
+        MCR<sub>lim</sub> value to achieve compliance is
+        <span style="font-size: 1.5rem;">{{ result.epl.limited_mcr }} kW</span>
+      </p>
+    </div>
+
+    <div style="margin-left: 1.5rem; color: var(--text-main); font-family: 'Courier New', Courier, monospace;">
+      <p style="margin-bottom: 0.5rem;">Hence, P<sub>ME,lim</sub> = {{ result.epl.pme_lim }} kW</p>
+      <p style="margin-bottom: 0.5rem;">P<sub>AE,lim</sub> = {{ result.epl.pae_lim }} kW</p>
+      <p style="margin-bottom: 0.5rem;">SFC<sub>ME,lim</sub> = {{ result.epl.sfc_me_lim }} g/kWh</p>
+      <p style="margin-bottom: 1.5rem;">V<sub>ref,ME,lim</sub> = {{ result.epl.new_v_ref }} kn</p>
+    </div>
+
     <div class="grid grid-3">
       <div class="metric-card">
         <div class="metric-label">Calculated MCR<sub>lim</sub></div>
@@ -62,18 +74,20 @@
         <div class="metric-unit">kW</div>
       </div>
       <div class="metric-card">
-        <div class="metric-label">Max P<sub>ME,lim</sub></div>
+        <div class="metric-label">Max P<sub>ME</sub> (83% load)</div>
         <div class="metric-value">{{ result.epl.max_pme }}</div>
         <div class="metric-unit">kW</div>
       </div>
       <div class="metric-card">
-        <div class="metric-label">V<sub>ref,lim</sub></div>
+        <div class="metric-label">Est. Speed V<sub>ref,lim</sub></div>
         <div class="metric-value">{{ result.epl.new_v_ref }}</div>
         <div class="metric-unit">knots</div>
       </div>
     </div>
     {% else %}
-    <div class="badge badge-danger">{{ result.epl.note }}</div>
+    <div class="error-msg">
+      <i class="fas fa-times-circle"></i> {{ result.epl.note }}
+    </div>
     {% endif %}
   </div>
   {% endif %}

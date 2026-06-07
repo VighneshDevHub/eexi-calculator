@@ -1,0 +1,390 @@
+{% extends "layout.html" %} {% block title %}Exhaust Gas Back Pressure (EGBP)
+Calculator{% endblock %} {% block content %}
+<div class="card">
+  <div class="card-header">
+    <h1><i class="fas fa-wind"></i> EGBP Calculator</h1>
+    <p class="subtitle">
+      Calculate the total back pressure of an exhaust gas system based on
+      pipeline elements, mass flow, and temperature. Compliant with Wärtsilä
+      engineering standards.
+    </p>
+  </div>
+
+  <form id="egbpForm" novalidate>
+    <!-- System Parameters -->
+    <div class="form-section">
+      <h3 class="section-title">
+        <i class="fas fa-engine"></i> System Parameters
+      </h3>
+      <div class="grid grid-4">
+        <div class="field-group">
+          <label for="enginePreset">Engine Preset</label>
+          <select id="enginePreset">
+            <option value="">-- Custom --</option>
+            {% for key, p in engine_presets.items() %}
+            <option
+              value="{{ key }}"
+              data-mass="{{ p.mass_flow }}"
+              data-temp="{{ p.temp_tc }}"
+              data-maxbp="{{ p.max_bp_pa }}"
+            >
+              {{ p.label }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field-group">
+          <label for="mass_flow_kgs"
+            >Mass Flow <span class="unit">[kg/s]</span></label
+          >
+          <input
+            type="number"
+            step="0.001"
+            id="mass_flow_kgs"
+            name="mass_flow_kgs"
+            required
+            placeholder="e.g. 5.5"
+          />
+        </div>
+        <div class="field-group">
+          <label for="temp_tc_c"
+            >Temperature <span class="unit">[°C]</span></label
+          >
+          <input
+            type="number"
+            step="0.1"
+            id="temp_tc_c"
+            name="temp_tc_c"
+            required
+            placeholder="e.g. 350"
+          />
+        </div>
+        <div class="field-group">
+          <label for="max_bp_pa">Max BP <span class="unit">[Pa]</span></label>
+          <input
+            type="number"
+            step="1"
+            id="max_bp_pa"
+            name="max_bp_pa"
+            value="3000"
+          />
+        </div>
+      </div>
+
+      <div class="grid grid-2 mt-4">
+        <div class="field-group">
+          <label for="roughness_key">Pipe Roughness</label>
+          <select id="roughness_key" name="roughness_key">
+            {% for key, val in roughness_options.items() %}
+            <option value="{{ key }}">
+              {{ key.replace('_', ' ').title() }} ({{ val }}mm)
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pipeline Elements -->
+    <div class="form-section">
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 1.5rem;
+        "
+      >
+        <h3 class="section-title">
+          <i class="fas fa-list"></i> Pipeline Elements
+        </h3>
+        <button type="button" id="addElement" class="btn btn-outline">
+          <i class="fas fa-plus"></i> Add Element
+        </button>
+      </div>
+
+      <div class="table-container">
+        <table id="elementsTable">
+          <thead>
+            <tr>
+              <th style="width: 50px">#</th>
+              <th style="width: 250px">Element Type</th>
+              <th>Dimensions (mm)</th>
+              <th style="width: 80px">Action</th>
+            </tr>
+          </thead>
+          <tbody id="elementsBody">
+            <!-- Elements injected here -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <button type="submit" class="btn btn-primary btn-block">
+        <i class="fas fa-play"></i> Run EGBP Calculation
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- Results Area -->
+<div id="egbpResults" class="hidden">
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-label">Status</div>
+      <div id="statusBadge" class="metric-value">---</div>
+      <div id="marginText" class="metric-unit">---</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Total Back Pressure</div>
+      <div id="totalPa" class="metric-value">0</div>
+      <div id="totalMmwc" class="metric-unit">0 mmWC</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">System Limit</div>
+      <div id="limitPa" class="metric-value">0</div>
+      <div class="metric-unit">Pascal (Pa)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div
+      style="
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+      "
+    >
+      <h3 class="section-title">
+        <i class="fas fa-chart-bar"></i> Pressure Loss Breakdown
+      </h3>
+      <button type="button" id="downloadEGBPReport" class="btn btn-outline">
+        <i class="fas fa-file-pdf"></i> Download Report
+      </button>
+    </div>
+    <div class="table-container">
+      <table id="resultsTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Element</th>
+            <th>Velocity (m/s)</th>
+            <th>ξ (loss coeff)</th>
+            <th>ΔP (Pa)</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<template id="elementRow">
+  <tr>
+    <td class="index">1</td>
+    <td>
+      <select class="type-select">
+        {% for key, label in element_types.items() %}
+        <option value="{{ key }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+    </td>
+    <td>
+      <div class="grid grid-2 inputs-container" style="gap: 0.5rem">
+        <!-- Inputs based on type injected here -->
+      </div>
+    </td>
+    <td>
+      <button
+        type="button"
+        class="btn btn-outline remove-row"
+        style="color: var(--danger); border-color: var(--danger)"
+      >
+        <i class="fas fa-trash"></i>
+      </button>
+    </td>
+  </tr>
+</template>
+{% endblock %} {% block scripts %}
+<script>
+  const ELEMENT_DEFAULTS = {
+    pipe: ["diameter_mm", "length_mm"],
+    pipe_bend: ["diameter_mm", "rd", "angle_deg"],
+    diffuser: ["inlet_a_mm", "outlet_b_mm"],
+    orifice: ["inlet_a_mm", "outlet_b_mm"],
+    custom: ["diameter_mm", "xi_custom"],
+    _default: ["diameter_mm"],
+  };
+
+  const LABEL_MAP = {
+    diameter_mm: "Dia",
+    length_mm: "Len",
+    rd: "R/d",
+    angle_deg: "Angle",
+    inlet_a_mm: "Inlet",
+    outlet_b_mm: "Outlet",
+    xi_custom: "ξ",
+  };
+
+  function createInputs(type, container) {
+    container.innerHTML = "";
+    const fields = ELEMENT_DEFAULTS[type] || ELEMENT_DEFAULTS._default;
+    fields.forEach((f) => {
+      const div = document.createElement("div");
+      div.className = "field-group";
+      div.style.marginBottom = "0";
+      div.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span style="font-size: 0.75rem; color: var(--text-muted); min-width: 40px;">${LABEL_MAP[f]}</span>
+                <input type="number" name="${f}" value="${f === "rd" ? 1.5 : f === "angle_deg" ? 90 : ""}" required style="padding: 0.4rem; font-size: 0.85rem;">
+            </div>
+        `;
+      container.appendChild(div);
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const body = document.getElementById("elementsBody");
+    const template = document.getElementById("elementRow");
+
+    function addRow() {
+      const clone = template.content.cloneNode(true);
+      const tr = clone.querySelector("tr");
+      const select = tr.querySelector(".type-select");
+      const container = tr.querySelector(".inputs-container");
+
+      select.addEventListener("change", (e) =>
+        createInputs(e.target.value, container),
+      );
+      createInputs("pipe", container);
+
+      tr.querySelector(".remove-row").onclick = () => {
+        tr.remove();
+        updateIndices();
+      };
+
+      body.appendChild(tr);
+      updateIndices();
+    }
+
+    function updateIndices() {
+      body
+        .querySelectorAll(".index")
+        .forEach((el, i) => (el.textContent = i + 1));
+    }
+
+    document.getElementById("addElement").onclick = addRow;
+
+    // Initial rows
+    addRow();
+    addRow();
+
+    // Engine Presets
+    document.getElementById("enginePreset").onchange = (e) => {
+      const opt = e.target.selectedOptions[0];
+      if (!opt.value) return;
+      document.getElementById("mass_flow_kgs").value = opt.dataset.mass;
+      document.getElementById("temp_tc_c").value = opt.dataset.temp;
+      document.getElementById("max_bp_pa").value = opt.dataset.maxbp;
+    };
+
+    // Form Submit
+    document.getElementById("egbpForm").onsubmit = async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const data = {
+        mass_flow_kgs: document.getElementById("mass_flow_kgs").value,
+        temp_tc_c: document.getElementById("temp_tc_c").value,
+        max_bp_pa: document.getElementById("max_bp_pa").value,
+        roughness_key: document.getElementById("roughness_key").value,
+        elements: [],
+      };
+
+      body.querySelectorAll("tr").forEach((tr) => {
+        const el = { element_type: tr.querySelector(".type-select").value };
+        tr.querySelectorAll("input").forEach((input) => {
+          el[input.name] = input.value;
+        });
+        data.elements.push(el);
+      });
+
+      try {
+        const resp = await fetch("/api/calculate-egbp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+        const res = await resp.json();
+
+        if (res.error) throw new Error(res.error);
+
+        // Render Results
+        const resultsPanel = document.getElementById("egbpResults");
+        resultsPanel.classList.remove("hidden");
+
+        const statusEl = document.getElementById("statusBadge");
+        statusEl.textContent = res.status;
+        statusEl.style.color =
+          res.status === "PASSED" ? "var(--success)" : "var(--danger)";
+
+        document.getElementById("marginText").textContent =
+          `Margin: ${res.margin_pa.toLocaleString()} Pa`;
+
+        document.getElementById("totalPa").textContent =
+          res.total_pressure_pa.toLocaleString();
+        document.getElementById("totalMmwc").textContent =
+          `${res.total_pressure_mmwc} mmWC`;
+        document.getElementById("limitPa").textContent =
+          res.max_bp_pa.toLocaleString();
+
+        const resBody = document.querySelector("#resultsTable tbody");
+        resBody.innerHTML = "";
+        res.elements.forEach((el) => {
+          const tr = document.createElement("tr");
+          const label =
+            el.label || el.element_type.replace("_", " ").toUpperCase();
+          tr.innerHTML = `
+                    <td>${el.position}</td>
+                    <td><strong>${label}</strong></td>
+                    <td>${el.velocity.toFixed(2)}</td>
+                    <td>${el.xi.toFixed(4)}</td>
+                    <td><strong>${el.pressure_loss_pa.toFixed(1)}</strong></td>
+                    <td><small>${el.note || ""}</small></td>
+                `;
+          resBody.appendChild(tr);
+        });
+
+        resultsPanel.scrollIntoView({ behavior: "smooth" });
+
+        // Setup PDF download with the current results
+        document.getElementById("downloadEGBPReport").onclick = async () => {
+          try {
+            const resp = await fetch("/api/egbp-report", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(res),
+            });
+            if (resp.ok) {
+              const blob = await resp.blob();
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `EGBP_Report.pdf`;
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+            }
+          } catch (err) {
+            console.error("PDF Error:", err);
+          }
+        };
+      } catch (err) {
+        alert("Calculation Error: " + err.message);
+      }
+    };
+  });
+</script>
+{% endblock %}

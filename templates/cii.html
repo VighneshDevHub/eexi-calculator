@@ -1,4 +1,5 @@
-{% extends "layout.html" %} {% block content %}
+{% extends "layout.html" %} {% block title %}CII Calculator{% endblock %} {%
+block content %}
 <div class="card">
   <div class="card-header">
     <h1><i class="fas fa-chart-line"></i> CII Calculator</h1>
@@ -50,7 +51,10 @@
               <label for="year">Assessment Year</label>
               <select id="year" name="year" required>
                 {% for y in cii_years %}
-                <option value="{{ y }}" {% if y == "2024" %}selected{% endif %}>
+                <option
+                  value="{{ y }}"
+                  {% if y == "2024" %}selected{% endif %}
+                >
                   {{ y }}
                 </option>
                 {% endfor %}
@@ -220,46 +224,15 @@
 
     <!-- RESULTS -->
     <section id="cii-results-panel" class="hidden">
-      <div class="form-section" style="position: sticky; top: 100px">
+      <div class="form-section result-card">
         <h3 class="section-title">
           <i class="fas fa-poll"></i> Performance Assessment
         </h3>
 
-        <div class="text-center mb-4">
-          <div
-            id="cii-rating-letter"
-            style="
-              font-size: 6rem;
-              font-weight: 900;
-              line-height: 1;
-              text-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            "
-          >
-            —
-          </div>
-          <div
-            id="cii-rating-label"
-            style="
-              font-weight: 800;
-              font-size: 1.5rem;
-              margin-top: 0.5rem;
-              text-transform: uppercase;
-              letter-spacing: 0.1em;
-            "
-          >
-            —
-          </div>
-          <p
-            id="cii-rating-desc"
-            style="
-              color: var(--text-muted);
-              font-size: 0.9rem;
-              margin-top: 1rem;
-              max-width: 300px;
-              margin-left: auto;
-              margin-right: auto;
-            "
-          ></p>
+        <div class="rating-display text-center mb-4">
+          <div id="cii-rating-letter" class="rating-letter">—</div>
+          <div id="cii-rating-label" class="rating-label">—</div>
+          <p id="cii-rating-desc" class="rating-desc"></p>
         </div>
 
         <div class="rating-band">
@@ -269,6 +242,13 @@
           <div class="band band-d">D</div>
           <div class="band band-e">E</div>
           <div class="marker" id="band-marker" style="left: 50%"></div>
+        </div>
+
+        <div class="rating-boundaries mt-2 mb-4">
+          <div class="boundary">A/B: <span id="b-a">--</span></div>
+          <div class="boundary">B/C: <span id="b-b">--</span></div>
+          <div class="boundary">C/D: <span id="b-c">--</span></div>
+          <div class="boundary">D/E: <span id="b-d">--</span></div>
         </div>
 
         <div class="metrics-grid">
@@ -302,35 +282,9 @@
           </button>
         </div>
 
-        <div
-          id="corrections-section"
-          class="mt-4 hidden"
-          style="
-            background: white;
-            padding: 1rem;
-            border-radius: var(--radius-sm);
-            border: 1px solid var(--border);
-          "
-        >
-          <div
-            style="
-              font-size: 0.75rem;
-              font-weight: 800;
-              color: var(--accent);
-              margin-bottom: 0.5rem;
-              text-transform: uppercase;
-            "
-          >
-            Applied Corrections
-          </div>
-          <ul
-            id="corrections-list"
-            style="
-              padding-left: 1.25rem;
-              font-size: 0.85rem;
-              color: var(--text-muted);
-            "
-          ></ul>
+        <div id="corrections-section" class="mt-4 hidden corrections-box">
+          <div class="corrections-header">Applied Corrections</div>
+          <ul id="corrections-list" class="corrections-list"></ul>
         </div>
       </div>
     </section>
