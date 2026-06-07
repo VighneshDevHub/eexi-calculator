@@ -32,15 +32,32 @@ def estimate_speed_at_power(v_ref_original: float, p_me_original: float, p_me_ne
     return v_ref_original * (p_me_new / p_me_original) ** (1.0 / n)
 
 
+# Speed-Power Exponents (n) based on common maritime engineering standards
+# v = v_ref * (P / P_ref)^(1/n)
+# These are typically 3.0 for propulsion, but IMO/Wartsila often use higher
+# values for EEXI reference (e.g., 7.0 for tankers/bulkers, 8.0-9.0 for others)
+N_EXPONENTS = {
+    "bulk_carrier": 7.0,
+    "tanker": 7.0,
+    "container": 8.0,
+    "general_cargo": 7.0,
+    "lng_carrier": 7.0,
+    "gas_carrier": 7.0,
+    "ro_ro_cargo": 7.0,
+    "ro_ro_pass": 7.0,
+    "cruise": 7.0,
+    "default": 7.0
+}
+
 def calc_epl(
     required_eexi: float,
     capacity: float,
     v_ref: float,
     cf_me: float,
     sfc_me: float,
-    pae: float = 0.0,
-    cf_ae: float = 3.114,
-    sfc_ae: float = 0.0,
+    pae: float,
+    cf_ae: float,
+    sfc_ae: float,
     f_i: float = 1.0,
     f_w: float = 1.0,
     f_c: float = 1.0,
@@ -48,7 +65,7 @@ def calc_epl(
     f_m: float = 1.0,
     ship_type: str = "tanker",
     p_me_original: float = 0.0,
-    n_exponent: float = 0.0,
+    n_exponent: float = 0.0
 ) -> dict:
     """
     Calculate Engine Power Limitation target with speed adjustment.
@@ -85,24 +102,30 @@ def calc_epl(
         if ship_type == "tanker":
             n = 7.0315
     
-    # 2. Iteratively solve for PME that achieves Required EEXI
-    # Goal: Attained(PME) = Required
-    # Attained = (PME * CF * SFC + AE_emissions) / (Capacity * V_ref * (PME/PME_orig)^(1/n))
+    # Round Required EEXI to match manual engineering precision (usually 2 decimals)
+    target_eexi = round(required_eexi, 2)
     
-    current_pme = p_me_original * 0.8  # Better initial guess
-
+    current_pme = p_me_original * 0.8 # Initial guess
+    
     for _ in range(50):
-        # Guard: negative PME would produce a complex number via fractional exponent
-        if current_pme <= 0 or p_me_original <= 0:
-            current_pme = 0.0
-            break
-        current_v = v_ref * (current_pme / p_me_original) ** (1.0 / n)
-        # PME = (Required * Cap * V_new - AE) / (CF * SFC)
-        new_pme = (round(required_eexi, 2) * transport_work_base * current_v - ae_term) / (cf_me * sfc_me)
-        current_pme = new_pme
-
-    max_pme = float(current_pme)  # ensure real scalar (no complex leakage)
-    new_v_ref = v_ref * (max_pme / p_me_original) ** (1.0 / n) if (p_me_original > 0 and max_pme > 0) else v_ref
+        # Ensure current_pme is non-negative to avoid complex numbers
+        pme_for_speed = max(0.01, current_pme)
+        current_v = v_ref * (pme_for_speed / p_me_original) ** (1.0 / n) if p_me_original > 0 else v_ref
+        
+        # PME = (Target * Denom_base * V_new - AE) / (CF * SFC)
+        # Denom_base = f_i * f_c * f_l * capacity * f_w * f_m
+        current_pme = (target_eexi * transport_work_base * current_v - ae_term) / (cf_me * sfc_me)
+        
+        if current_pme < -1000: break # Physically impossible
+        
+    max_pme = float(current_pme.real) if isinstance(current_pme, complex) else current_pme
+    
+    # Calculate MCR_lim from P_ME_lim
+    # For EPL, P_ME is typically 83% of MCR_lim
+    limited_mcr = max_pme / 0.83
+    
+    pme_for_final_speed = max(0.0, max_pme)
+    new_v_ref = v_ref * (pme_for_final_speed / p_me_original) ** (1.0 / n) if p_me_original > 0 else v_ref
 
     if max_pme <= 0:
         return {
@@ -115,8 +138,6 @@ def calc_epl(
                 "Consult a naval architect for alternative compliance measures."
             ),
         }
-
-    limited_mcr = max_pme / 0.83
 
     return {
         "max_pme": round(max_pme, 2),
