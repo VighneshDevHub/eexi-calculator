@@ -23,7 +23,10 @@
       <div class="sidebar-header">
         <a href="{{ url_for('index') }}" class="logo">
           <i class="fas fa-ship"></i>
-          <span>MARITIME SUITE</span>
+          <div class="logo-text">
+            <span class="main-text">Maritime Suite</span>
+            <span class="sub-text">Compliance & Analysis</span>
+          </div>
         </a>
         <button class="menu-btn" id="closeSidebar">
           <i class="fas fa-times"></i>
@@ -74,25 +77,37 @@
         </a>
       </nav>
       <div class="sidebar-footer">
-        <p>&copy; {{ now.year }} Goltens</p>
-        <p>v{{ version }} | Compliance Tool</p>
+        <div class="footer-content">
+          <div class="version-tag">v{{ version }}</div>
+          <div class="footer-text">
+            <p>&copy; {{ now.year }} Goltens</p>
+            <p>Maritime Compliance</p>
+          </div>
+        </div>
       </div>
     </aside>
 
     <main class="main-content">
       <header class="top-bar">
-        <div style="display: flex; align-items: center; gap: 1rem">
+        <div class="top-bar-left">
           <button class="menu-btn" id="openSidebar">
             <i class="fas fa-bars"></i>
           </button>
           <h1 class="page-title">{% block title %}Dashboard{% endblock %}</h1>
         </div>
-        <div class="user-profile">
-          <span
-            ><i class="fas fa-calendar-alt"></i> {{ now.strftime('%d %b %Y')
-            }}</span
-          >
-          <span><i class="fas fa-user-circle"></i> Engineering Team</span>
+        <div class="top-bar-right">
+          <div class="top-bar-action">
+            <i class="fas fa-bell"></i>
+          </div>
+          <div class="user-profile">
+            <div class="user-info">
+              <span class="user-name">Engineering Team</span>
+              <span class="user-role">{{ now.strftime('%d %b %Y') }}</span>
+            </div>
+            <div class="user-avatar">
+              <i class="fas fa-user"></i>
+            </div>
+          </div>
         </div>
       </header>
 

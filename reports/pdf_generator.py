@@ -179,7 +179,7 @@ def generate_egbp_pdf_report(result_data):
     sys_info = [
         ["Mass Flow", f"{result_data['mass_flow_kgs']} kg/s"],
         ["Temperature", f"{result_data['temp_tc_c']} °C"],
-        ["Pipe Roughness", f"{result_data['roughness_key'].replace('_', ' ').title()}"],
+        ["Pipe Roughness", f"{result_data.get('roughness_key', 'steel_welded').replace('_', ' ').title()}"],
         ["Max Allowed BP", f"{result_data['max_bp_pa']} Pa"]
     ]
     
@@ -199,7 +199,7 @@ def generate_egbp_pdf_report(result_data):
         ["Total Back Pressure", f"{result_data['total_pressure_pa']} Pa"],
         ["Total Back Pressure", f"{result_data['total_pressure_mmwc']} mmWC"],
         ["Compliance Status", Paragraph(f"<b>{result_data['status']}</b>", ParagraphStyle('Status', textColor=status_color, fontSize=14))],
-        ["Safety Margin", f"{result_data['margin_pa']} Pa"]
+        ["Safety Margin", f"{result_data.get('margin_pct', 0)}%"]
     ]
     
     t2 = Table(results_info, colWidths=[200, 250])

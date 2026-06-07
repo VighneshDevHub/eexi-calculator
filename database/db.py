@@ -62,6 +62,7 @@ class Vessel(db.Model):
             'required_eexi': self.required_eexi,
             'status': self.status,
             'margin': self.margin,
+            'created_at_raw': self.created_at.isoformat(),
             'created_at': self.user_local_time if self.user_local_time else self.created_at.strftime('%Y-%m-%d %H:%M')
         }
 
@@ -87,6 +88,7 @@ class CIICalculation(db.Model):
             'required': round(self.required_cii, 4),
             'status': f"RATING {self.rating}",
             'margin': self.margin_pct,
+            'created_at_raw': self.created_at.isoformat(),
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M')
         }
 
@@ -111,6 +113,7 @@ class EGBPCalculation(db.Model):
             'required': f"{int(self.max_bp)} Pa",
             'status': self.status,
             'margin': round(self.max_bp - self.total_pa, 0),
+            'created_at_raw': self.created_at.isoformat(),
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M')
         }
 

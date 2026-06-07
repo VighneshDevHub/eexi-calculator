@@ -1,77 +1,76 @@
-# 🚢 Goltens Maritime Compliance Tool
+# Maritime Compliance & Analysis Suite
 
-[![Python](https://img.shields.io/badge/Python-3.12-blue.svg)](https://www.python.org/)
-[![Flask](https://img.shields.io/badge/Framework-Flask-lightgrey.svg)](https://flask.palletsprojects.com/)
-[![License](https://img.shields.io/badge/Compliance-IMO%20MEPC-green.svg)](https://www.imo.org/)
+A comprehensive engineering toolkit for maritime regulatory compliance, focusing on EEXI, CII, and Exhaust Gas Back Pressure (EGBP) analysis.
 
-A professional, web-based assessment tool for calculating **EEXI** (Energy Efficiency Existing Ship Index) and **CII** (Carbon Intensity Indicator) in accordance with the latest **IMO MARPOL Annex VI** regulations.
+## 🚢 Features
 
----
+### 1. EEXI Calculator (Energy Efficiency Existing Ship Index)
+- Calculate attained EEXI based on IMO Resolution MEPC.350(78).
+- Support for various ship types (Tankers, Bulk Carriers, Containers, etc.).
+- Engine Power Limitation (EPL) recommendations for non-compliant vessels.
+- PDF report generation with technical breakdown.
 
-## 🌟 Key Features
+### 2. CII Analysis (Carbon Intensity Indicator)
+- Annual operational efficiency rating (A-E).
+- Calculation of Required vs. Attained CII.
+- Support for various correction factors and exclusions.
+- Visual rating indicator and compliance trends.
 
-- **Dual Assessment Engine**: Complete support for both Technical (EEXI) and Operational (CII) compliance.
-- **Automated Calculations**: Implements complex IMO formulas for various ship types including Bulk Carriers, Tankers, and Container Ships.
-- **Smart Correction Factors**: Includes support for STS operations, shuttle tankers, and reefer electrical deductions per MEPC.355(78).
-- **Engine Power Limitation (EPL)**: Proactive recommendations for non-compliant vessels to achieve target EEXI.
-- **Professional PDF Reporting**: Generate high-fidelity technical reports with one click.
-- **Responsive Dashboard**: Modern, professional UI that works seamlessly across desktop and mobile devices.
+### 3. EGBP Calculator (Exhaust Gas Back Pressure)
+- Dynamic pipeline system modeling.
+- Darcy-Weisbach & Colebrook-White methodology for pressure loss.
+- Comprehensive library of pipeline elements (bends, valves, silencers, etc.).
+- Integrated Wärtsilä engineering standards.
+- Detailed pressure drop breakdown and PDF reporting.
 
----
+### 4. Fleet Management & History
+- Unified dashboard for all calculations.
+- Persistent database storage for historical assessments.
+- Admin dashboard for fleet-wide compliance monitoring.
+- Fully responsive design for Desktop, Tablet, and Mobile.
 
-## 📐 Regulatory Standards
+## 🛠️ Tech Stack
+- **Backend**: Python / Flask
+- **Database**: SQLite / SQLAlchemy
+- **Frontend**: Modern CSS3 (CSS Variables, Grid, Flexbox), Vanilla JavaScript
+- **Reporting**: ReportLab (PDF Generation)
+- **Testing**: PyTest
 
-This tool is built strictly upon the following **IMO Resolutions**:
-- **MEPC.350(78)**: EEXI Calculation Guidelines
-- **MEPC.351(78)**: EEXI Survey and Certification
-- **MEPC.352(78)**: Attained Annual CII Formula
-- **MEPC.353(78)**: CII Reference Lines
-- **MEPC.354(78)**: CII Rating Boundaries (A-E)
-- **MEPC.355(78)**: CII Correction Factors and Voyage Adjustments
+## 🚀 Getting Started
 
----
+### Prerequisites
+- Python 3.8+
+- pip (Python package manager)
 
-## 🛠️ Technical Stack
-
-- **Backend**: Python 3.12, Flask, SQLAlchemy
-- **Frontend**: HTML5, CSS3 (Modern Grid/Flexbox), JavaScript (ES6+)
-- **Database**: SQLite (Persistent storage for assessment history)
-- **Reporting**: ReportLab (Professional PDF generation)
-- **Styling**: Custom CSS with glassmorphism and responsive design principles
-
----
-
-## 📥 Installation & Setup
-
-1. **Clone the repository**:
+### Installation
+1. Clone the repository:
    ```bash
-   git clone <repository-url>
-   cd eexi-calculator
+   git clone https://github.com/your-repo/maritime-suite.git
+   cd maritime-suite
    ```
 
-2. **Create a virtual environment**:
+2. Create and activate a virtual environment:
    ```bash
    python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   # Windows
+   .\venv\Scripts\activate
+   # Linux/Mac
+   source venv/bin/activate
    ```
 
-3. **Install dependencies**:
+3. Install dependencies:
    ```bash
    pip install -r requirements.txt
    ```
 
-4. **Initialize and run**:
+4. Initialize the database and run the app:
    ```bash
    python app.py
    ```
-   The application will be available at `http://127.0.0.1:5000`
+   The application will be available at `http://127.0.0.1:5000`.
 
----
+## 📖 User Manual
+Detailed instructions for each calculator can be found in the **User Manual** section within the application.
 
-## 📖 Documentation
-
-For a deep dive into the methodology and step-by-step usage, visit the **User Manual** page within the application or refer to the technical guides in the `docs/` folder.
-
----
-
-_This project was developed to accelerate digitalization in maritime compliance and support the global transition toward Green Shipping._
+## ⚖️ License
+This project is developed for Goltens Maritime Compliance. All rights reserved.

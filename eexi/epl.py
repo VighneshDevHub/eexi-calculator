@@ -89,20 +89,20 @@ def calc_epl(
     # Goal: Attained(PME) = Required
     # Attained = (PME * CF * SFC + AE_emissions) / (Capacity * V_ref * (PME/PME_orig)^(1/n))
     
-    current_pme = p_me_original * 0.8 # Better initial guess
-    
+    current_pme = p_me_original * 0.8  # Better initial guess
+
     for _ in range(50):
-        current_v = v_ref * (current_pme / p_me_original) ** (1.0 / n) if p_me_original > 0 else v_ref
+        # Guard: negative PME would produce a complex number via fractional exponent
+        if current_pme <= 0 or p_me_original <= 0:
+            current_pme = 0.0
+            break
+        current_v = v_ref * (current_pme / p_me_original) ** (1.0 / n)
         # PME = (Required * Cap * V_new - AE) / (CF * SFC)
-        # Using rounded required EEXI to match manual calculation style in images
-        current_pme = (round(required_eexi, 2) * transport_work_base * current_v - ae_term) / (cf_me * sfc_me)
-        
-    # Final check: Does this PME actually match Required EEXI?
-    # Required EEXI in image is 4.11 (rounded). Our internal is 4.1111.
-    # The image uses 4.11 as a literal constant in its equation.
-    
-    max_pme = current_pme
-    new_v_ref = v_ref * (max_pme / p_me_original) ** (1.0 / n) if p_me_original > 0 else v_ref
+        new_pme = (round(required_eexi, 2) * transport_work_base * current_v - ae_term) / (cf_me * sfc_me)
+        current_pme = new_pme
+
+    max_pme = float(current_pme)  # ensure real scalar (no complex leakage)
+    new_v_ref = v_ref * (max_pme / p_me_original) ** (1.0 / n) if (p_me_original > 0 and max_pme > 0) else v_ref
 
     if max_pme <= 0:
         return {

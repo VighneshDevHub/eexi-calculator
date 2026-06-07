@@ -1,4 +1,5 @@
 import os
+import json
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for
 from database.db import db, init_db, Vessel, CIICalculation, EGBPCalculation
@@ -76,7 +77,8 @@ def history():
     egbp = EGBPCalculation.query.order_by(EGBPCalculation.created_at.desc()).all()
     
     all_calcs = [v.to_dict() for v in eexi] + [c.to_dict() for c in cii] + [e.to_dict() for e in egbp]
-    all_calcs.sort(key=lambda x: x['created_at'], reverse=True)
+    # Re-sort because we merged three sorted lists
+    all_calcs.sort(key=lambda x: x.get('created_at_raw', ''), reverse=True)
     
     return render_template('history.html', vessels=all_calcs)
 
@@ -95,6 +97,32 @@ def egbp_page():
                          engine_presets=ENGINE_PRESETS,
                          roughness_options=ROUGHNESS_MAP)
 
+@app.route('/calculate-egbp', methods=['POST'])
+def api_calculate_egbp():
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "Missing input data"}), 400
+            
+        result = calculate_egbp(data)
+        
+        # Save to history
+        calc = EGBPCalculation(
+            mass_flow=float(data['mass_flow_kgs']),
+            temperature=float(data['temp_tc_c']),
+            total_pa=result['total_pressure_pa'],
+            max_bp=float(data['max_bp_pa']),
+            status=result['status'],
+            full_data=json.dumps(result)
+        )
+        db.session.add(calc)
+        db.session.commit()
+        
+        result['id'] = calc.id
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/admin')
 def admin_dashboard():
     vessels = Vessel.query.all()
@@ -103,9 +131,7 @@ def admin_dashboard():
         'compliant_count': len([v for v in vessels if v.status == 'COMPLIANT']),
         'non_compliant_count': len([v for v in vessels if v.status == 'NON_COMPLIANT']),
     }
-    return render_template('admin.html', stats=stats, recent_vessels=vessels[-10:])
-
-import json
+    return render_template('admin.html', stats=stats, recent_vessels=vessels[-10:], vessels=vessels)
 
 @app.route('/api/calculate-cii', methods=['POST'])
 def api_calculate_cii():
@@ -125,29 +151,6 @@ def api_calculate_cii():
             full_data=json.dumps(result)
         )
         db.session.add(cii_calc)
-        db.session.commit()
-        
-        return jsonify(result), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/calculate-egbp', methods=['POST'])
-def api_calculate_egbp():
-    data = request.get_json(force=True, silent=True)
-    if not data: return jsonify({"error": "Invalid JSON"}), 400
-    try:
-        result = calculate_egbp(data)
-        
-        # Save to history
-        egbp_calc = EGBPCalculation(
-            mass_flow=float(data['mass_flow_kgs']),
-            temperature=float(data['temp_tc_c']),
-            total_pa=result['total_pressure_pa'],
-            max_bp=float(data['max_bp_pa']),
-            status=result['status'],
-            full_data=json.dumps(result)
-        )
-        db.session.add(egbp_calc)
         db.session.commit()
         
         return jsonify(result), 200

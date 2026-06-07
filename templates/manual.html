@@ -3,188 +3,515 @@
 {% block title %}User Manual{% endblock %}
 
 {% block content %}
-<div class="card" style="border: none; box-shadow: var(--shadow-lg);">
-    <div class="card-header text-center" style="background: linear-gradient(135deg, var(--primary) 0%, #1e293b 100%); color: white; border-radius: var(--radius-md) var(--radius-md) 0 0; padding: 4rem 2rem;">
-        <h1 style="color: white; font-size: 3rem; margin-bottom: 1rem;"><i class="fas fa-book-open"></i> User Manual</h1>
-        <p style="color: #94a3b8; font-size: 1.25rem; max-width: 800px; margin: 0 auto;">A comprehensive technical guide to understanding EEXI & CII regulations and mastering the calculation tools.</p>
-    </div>
-
-    <div style="padding: 3rem;">
-        <!-- Navigation Tabs -->
-        <div class="manual-nav" style="display: flex; gap: 1rem; margin-bottom: 4rem; flex-wrap: wrap; justify-content: center; position: sticky; top: 80px; z-index: 10; background: var(--bg-card); padding: 1rem; border-radius: 99px; box-shadow: var(--shadow-sm); border: 1px solid var(--border);">
-            <a href="#intro" class="btn btn-outline" style="border-radius: 99px; padding: 0.5rem 1.5rem; font-size: 0.9rem;"><i class="fas fa-ship"></i> EEXI Guide</a>
-            <a href="#cii-intro" class="btn btn-outline" style="border-radius: 99px; padding: 0.5rem 1.5rem; font-size: 0.9rem;"><i class="fas fa-chart-line"></i> CII Guide</a>
-            <a href="#math" class="btn btn-outline" style="border-radius: 99px; padding: 0.5rem 1.5rem; font-size: 0.9rem;"><i class="fas fa-square-root-alt"></i> Methodology</a>
-            <a href="#workflow" class="btn btn-outline" style="border-radius: 99px; padding: 0.5rem 1.5rem; font-size: 0.9rem;"><i class="fas fa-list-ol"></i> Workflow</a>
-            <a href="#compliance" class="btn btn-outline" style="border-radius: 99px; padding: 0.5rem 1.5rem; font-size: 0.9rem;"><i class="fas fa-shield-alt"></i> Compliance</a>
+<div class="manual-container">
+    <!-- Hero Header -->
+    <header class="manual-hero">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <span class="manual-tag">Technical Documentation</span>
+            <h1>Maritime Suite User Manual</h1>
+            <p>Mastering EEXI, CII, and EGBP Compliance Tools</p>
         </div>
+    </header>
 
-        <!-- Section: EEXI -->
-        <div id="intro" class="manual-section" style="margin-bottom: 6rem;">
-            <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem;">
-                <div style="background: var(--accent); color: white; width: 60px; height: 60px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 1.75rem; flex-shrink: 0; box-shadow: 0 8px 16px rgba(59, 130, 246, 0.3);">
-                    <i class="fas fa-anchor"></i>
+    <!-- Floating Navigation -->
+    <nav class="manual-sidebar-nav">
+        <div class="nav-links-wrapper">
+            <a href="#eexi" class="nav-dot" data-title="EEXI Guide">
+                <i class="fas fa-ship"></i>
+                <span>EEXI</span>
+            </a>
+            <a href="#cii" class="nav-dot" data-title="CII Guide">
+                <i class="fas fa-chart-line"></i>
+                <span>CII</span>
+            </a>
+            <a href="#egbp" class="nav-dot" data-title="EGBP Guide">
+                <i class="fas fa-wind"></i>
+                <span>EGBP</span>
+            </a>
+            <a href="#methodology" class="nav-dot" data-title="Methodology">
+                <i class="fas fa-microscope"></i>
+                <span>Math</span>
+            </a>
+            <a href="#compliance" class="nav-dot" data-title="Compliance">
+                <i class="fas fa-shield-check"></i>
+                <span>Solutions</span>
+            </a>
+        </div>
+    </nav>
+
+    <div class="manual-content-wrapper">
+        <!-- EEXI Section -->
+        <section id="eexi" class="manual-card animate-on-scroll">
+            <div class="card-icon eexi-icon"><i class="fas fa-ship"></i></div>
+            <div class="card-body">
+                <h2 class="section-title">1. Energy Efficiency Existing Ship Index (EEXI)</h2>
+                <div class="info-box accent-border">
+                    <p>The EEXI is a technical measure applicable to existing ships above 400 GT. It evaluates a vessel's design efficiency based on its technical specifications rather than operational performance.</p>
                 </div>
-                <div>
-                    <h2 style="font-size: 2rem; margin-bottom: 0.25rem;">1. Understanding EEXI</h2>
-                    <p style="color: var(--text-muted); font-weight: 500;">Energy Efficiency Existing Ship Index</p>
-                </div>
-            </div>
-            
-            <div style="background: #f8fafc; border-radius: var(--radius-md); padding: 2.5rem; border-left: 6px solid var(--accent);">
-                <p style="font-size: 1.1rem; line-height: 1.8; color: var(--text-main);">The <strong>EEXI</strong> is a technical measure introduced by the <strong>IMO</strong> to reduce GHG emissions from ships. Unlike the EEDI (for new builds), EEXI applies to <strong>existing ships</strong> above 400 GT. It evaluates the vessel's technical design efficiency under standardized conditions.</p>
                 
-                <div class="grid grid-2 mt-4" style="gap: 2rem; margin-top: 2.5rem;">
-                    <div style="background: white; padding: 1.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border);">
-                        <h4 style="color: var(--success); margin-bottom: 0.75rem;"><i class="fas fa-bullseye"></i> Key Goal</h4>
-                        <p style="font-size: 0.95rem; color: var(--text-muted);">Reduce carbon intensity by at least 40% by 2030 across international shipping.</p>
+                <div class="manual-grid">
+                    <div class="feature-item">
+                        <h3><i class="fas fa-check-circle"></i> Applicability</h3>
+                        <p>Mandatory for all ships subject to MARPOL Annex VI regulations. Includes tankers, bulk carriers, gas carriers, and container ships.</p>
                     </div>
-                    <div style="background: white; padding: 1.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border);">
-                        <h4 style="color: var(--accent); margin-bottom: 0.75rem;"><i class="fas fa-vessel-integrated"></i> Applicability</h4>
-                        <p style="font-size: 0.95rem; color: var(--text-muted);">Applies to major vessel categories including Bulk Carriers, Tankers, and Container Ships.</p>
+                    <div class="feature-item">
+                        <h3><i class="fas fa-tachometer-alt"></i> Key Metric</h3>
+                        <p>Measures gCO2 emissions per tonne-mile based on design parameters (MCR, SFC, Speed, Capacity).</p>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Section: CII -->
-        <div id="cii-intro" class="manual-section" style="margin-bottom: 6rem;">
-            <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem;">
-                <div style="background: #10b981; color: white; width: 60px; height: 60px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 1.75rem; flex-shrink: 0; box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);">
-                    <i class="fas fa-chart-line"></i>
-                </div>
-                <div>
-                    <h2 style="font-size: 2rem; margin-bottom: 0.25rem;">2. Understanding CII</h2>
-                    <p style="color: var(--text-muted); font-weight: 500;">Carbon Intensity Indicator</p>
-                </div>
-            </div>
-
-            <div style="background: #f0fdf4; border-radius: var(--radius-md); padding: 2.5rem; border-left: 6px solid #10b981;">
-                <p style="font-size: 1.1rem; line-height: 1.8; color: var(--text-main);">The <strong>CII</strong> is an <strong>operational measure</strong>. While EEXI looks at design, CII looks at how you actually sail. It rates ships from <strong>A (Superior)</strong> to <strong>E (Inferior)</strong> based on annual operational efficiency.</p>
-                
-                <div class="grid grid-3 mt-4" style="gap: 1.5rem; margin-top: 2.5rem;">
-                    <div style="background: white; padding: 1.25rem; border-radius: var(--radius-sm); border: 1px solid #d1fae5; text-align: center;">
-                        <span class="badge badge-success" style="margin-bottom: 0.5rem;">Operational</span>
-                        <p style="font-size: 0.85rem; color: var(--text-muted);">Based on actual annual fuel consumption and distance.</p>
-                    </div>
-                    <div style="background: white; padding: 1.25rem; border-radius: var(--radius-sm); border: 1px solid #d1fae5; text-align: center;">
-                        <span class="badge badge-warning" style="margin-bottom: 0.5rem; background: #fffbeb; color: #d97706;">Annual</span>
-                        <p style="font-size: 0.85rem; color: var(--text-muted);">Calculated yearly with stricter targets every year.</p>
-                    </div>
-                    <div style="background: white; padding: 1.25rem; border-radius: var(--radius-sm); border: 1px solid #d1fae5; text-align: center;">
-                        <span class="badge badge-danger" style="margin-bottom: 0.5rem; background: #fef2f2; color: #dc2626;">Rating</span>
-                        <p style="font-size: 0.85rem; color: var(--text-muted);">D or E ratings require an updated SEEMP Plan.</p>
+                <div class="pro-tip">
+                    <i class="fas fa-lightbulb"></i>
+                    <div>
+                        <strong>Pro Tip:</strong> Ensure you use certified SFOC values from the engine's Technical File for accurate EEXI results.
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- Section: Math -->
-        <div id="math" class="manual-section" style="margin-bottom: 6rem;">
-            <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem;">
-                <div style="background: var(--primary); color: white; width: 60px; height: 60px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 1.75rem; flex-shrink: 0;">
-                    <i class="fas fa-calculator"></i>
+        <!-- CII Section -->
+        <section id="cii" class="manual-card animate-on-scroll">
+            <div class="card-icon cii-icon"><i class="fas fa-chart-line"></i></div>
+            <div class="card-body">
+                <h2 class="section-title">2. Carbon Intensity Indicator (CII)</h2>
+                <div class="info-box cii-border">
+                    <p>Unlike EEXI, CII is an <strong>operational measure</strong>. It rates ships from A to E based on how they are actually operated throughout the year, focusing on fuel consumption and distance sailed.</p>
                 </div>
-                <div>
-                    <h2 style="font-size: 2rem; margin-bottom: 0.25rem;">3. Calculation Methodology</h2>
-                    <p style="color: var(--text-muted); font-weight: 500;">IMO Regulatory Formulas</p>
-                </div>
-            </div>
 
-            <div class="formula-box" style="padding: 3rem; text-align: center; margin: 2rem 0; font-size: 1.25rem;">
-                <div style="margin-bottom: 1rem; color: #94a3b8; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.1em;">EEXI Formula</div>
-                Attained EEXI = (P<sub>ME</sub> × C<sub>F</sub> × SFC + P<sub>AE</sub> × C<sub>F</sub> × SFC) / (f<sub>i</sub> × Capacity × V<sub>ref</sub> × f<sub>w</sub>)
-            </div>
+                <div class="rating-visual">
+                    <div class="rating-step step-a">A</div>
+                    <div class="rating-step step-b">B</div>
+                    <div class="rating-step step-c">C</div>
+                    <div class="rating-step step-d">D</div>
+                    <div class="rating-step step-e">E</div>
+                </div>
 
-            <div class="grid grid-2" style="margin-top: 3rem;">
-                <div class="form-section">
-                    <h4 style="margin-bottom: 1rem; color: var(--accent);"><i class="fas fa-cog"></i> Technical Terms</h4>
-                    <ul style="list-style: none; padding: 0; font-size: 0.95rem; color: var(--text-muted);">
-                        <li style="margin-bottom: 0.75rem;"><strong style="color: var(--primary);">P<sub>ME</sub>:</strong> Main Engine power at 75% MCR.</li>
-                        <li style="margin-bottom: 0.75rem;"><strong style="color: var(--primary);">C<sub>F</sub>:</strong> Carbon conversion factor (Fuel specific).</li>
-                        <li style="margin-bottom: 0.75rem;"><strong style="color: var(--primary);">SFC:</strong> Specific Fuel Consumption (Certified).</li>
-                    </ul>
-                </div>
-                <div class="form-section">
-                    <h4 style="margin-bottom: 1rem; color: var(--accent);"><i class="fas fa-sliders-h"></i> Correction Factors</h4>
-                    <ul style="list-style: none; padding: 0; font-size: 0.95rem; color: var(--text-muted);">
-                        <li style="margin-bottom: 0.75rem;"><strong style="color: var(--primary);">f<sub>i</sub>:</strong> Capacity correction factor.</li>
-                        <li style="margin-bottom: 0.75rem;"><strong style="color: var(--primary);">f<sub>w</sub>:</strong> Weather correction factor.</li>
-                        <li style="margin-bottom: 0.75rem;"><strong style="color: var(--primary);">f<sub>c</sub>:</strong> Cubic capacity factor.</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-
-        <!-- Section: Workflow -->
-        <div id="workflow" class="manual-section" style="margin-bottom: 6rem;">
-            <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 3rem;">
-                <div style="background: #f59e0b; color: white; width: 60px; height: 60px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 1.75rem; flex-shrink: 0; box-shadow: 0 8px 16px rgba(245, 158, 11, 0.3);">
-                    <i class="fas fa-stream"></i>
-                </div>
-                <div>
-                    <h2 style="font-size: 2rem; margin-bottom: 0.25rem;">4. Step-by-Step Workflow</h2>
-                    <p style="color: var(--text-muted); font-weight: 500;">How to use the calculator</p>
-                </div>
-            </div>
-
-            <div class="grid grid-3">
-                <div style="text-align: center; padding: 2rem;">
-                    <div style="width: 40px; height: 40px; background: var(--accent); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; font-weight: 800;">1</div>
-                    <h4 style="margin-bottom: 1rem;">Data Entry</h4>
-                    <p style="font-size: 0.9rem; color: var(--text-muted);">Enter vessel design data for EEXI or annual operating data for CII.</p>
-                </div>
-                <div style="text-align: center; padding: 2rem;">
-                    <div style="width: 40px; height: 40px; background: var(--accent); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; font-weight: 800;">2</div>
-                    <h4 style="margin-bottom: 1rem;">Assessment</h4>
-                    <p style="font-size: 0.9rem; color: var(--text-muted);">The tool instantly compares your data against IMO targets.</p>
-                </div>
-                <div style="text-align: center; padding: 2rem;">
-                    <div style="width: 40px; height: 40px; background: var(--accent); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; font-weight: 800;">3</div>
-                    <h4 style="margin-bottom: 1rem;">Export Report</h4>
-                    <p style="font-size: 0.9rem; color: var(--text-muted);">Generate a high-quality PDF report for official compliance records.</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Section: Compliance -->
-        <div id="compliance" class="manual-section">
-            <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem;">
-                <div style="background: var(--danger); color: white; width: 60px; height: 60px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 1.75rem; flex-shrink: 0; box-shadow: 0 8px 16px rgba(239, 68, 68, 0.3);">
-                    <i class="fas fa-shield-alt"></i>
-                </div>
-                <div>
-                    <h2 style="font-size: 2rem; margin-bottom: 0.25rem;">5. Compliance & Solutions</h2>
-                    <p style="color: var(--text-muted); font-weight: 500;">What to do if non-compliant</p>
-                </div>
-            </div>
-
-            <div class="grid grid-2" style="gap: 2rem;">
-                <div style="background: #fef2f2; padding: 2rem; border-radius: var(--radius-md); border: 1.5px solid #fee2e2;">
-                    <h4 style="color: #dc2626; margin-bottom: 1rem;"><i class="fas fa-exclamation-triangle"></i> Non-Compliant?</h4>
-                    <p style="font-size: 0.95rem; color: #991b1b; margin-bottom: 1.5rem;">If your attained index is higher than required, you must take technical action.</p>
-                    <div style="background: white; padding: 1.25rem; border-radius: var(--radius-sm);">
-                        <strong style="color: var(--primary);">Engine Power Limitation (EPL):</strong> Our tool automatically calculates the required power reduction to bring your ship back into compliance.
+                <div class="manual-grid">
+                    <div class="feature-item">
+                        <h3>Annual Assessment</h3>
+                        <p>CII targets become 2% stricter every year from 2023 to 2027 to encourage continuous improvement.</p>
+                    </div>
+                    <div class="feature-item">
+                        <h3>SEEMP Part III</h3>
+                        <p>Vessels rated D for three consecutive years or E for one year must submit an implementation plan for improvement.</p>
                     </div>
                 </div>
-                <div style="background: #ecfdf5; padding: 2rem; border-radius: var(--radius-md); border: 1.5px solid #d1fae5;">
-                    <h4 style="color: #059669; margin-bottom: 1rem;"><i class="fas fa-check-circle"></i> Best Practices</h4>
-                    <ul style="list-style: none; padding: 0; font-size: 0.95rem; color: #065f46;">
-                        <li style="margin-bottom: 0.75rem;"><i class="fas fa-check"></i> Regular hull and propeller cleaning.</li>
-                        <li style="margin-bottom: 0.75rem;"><i class="fas fa-check"></i> Route optimization and slow steaming.</li>
-                        <li style="margin-bottom: 0.75rem;"><i class="fas fa-check"></i> Investment in energy-saving devices.</li>
-                    </ul>
+            </div>
+        </section>
+
+        <!-- EGBP Section -->
+        <section id="egbp" class="manual-card animate-on-scroll">
+            <div class="card-icon egbp-icon"><i class="fas fa-wind"></i></div>
+            <div class="card-body">
+                <h2 class="section-title">3. Exhaust Gas Back Pressure (EGBP)</h2>
+                <div class="info-box egbp-border">
+                    <p>Essential for scrubber retrofits and engine health. Our calculator uses the Darcy-Weisbach methodology to ensure your exhaust system remains within manufacturer limits.</p>
+                </div>
+
+                <div class="steps-grid">
+                    <div class="step-card">
+                        <span class="step-num">01</span>
+                        <h4>Define Elements</h4>
+                        <p>Add pipes, bends, valves, and silencers to your system model.</p>
+                    </div>
+                    <div class="step-card">
+                        <span class="step-num">02</span>
+                        <h4>Set Flow Data</h4>
+                        <p>Enter mass flow and temperature after the turbocharger.</p>
+                    </div>
+                    <div class="step-card">
+                        <span class="step-num">03</span>
+                        <h4>Analyze Loss</h4>
+                        <p>Identify which components cause the most pressure drop (ΔP).</p>
+                    </div>
                 </div>
             </div>
-        </div>
+        </section>
+
+        <!-- Methodology Section -->
+        <section id="methodology" class="manual-card animate-on-scroll">
+            <div class="card-icon math-icon"><i class="fas fa-microscope"></i></div>
+            <div class="card-body">
+                <h2 class="section-title">4. Technical Methodology</h2>
+                <div class="formula-container">
+                    <div class="formula-item">
+                        <span class="formula-label">EEXI Attained</span>
+                        <code>(P<sub>ME</sub> × C<sub>F</sub> × SFC) / (Capacity × V<sub>ref</sub>)</code>
+                    </div>
+                    <div class="formula-item">
+                        <span class="formula-label">Pressure Loss (ΔP)</span>
+                        <code>ξ × (ρ/2) × v²</code>
+                    </div>
+                </div>
+                <p class="methodology-note">Our calculators are built upon IMO Resolution MEPC.350(78) and Wärtsilä engineering standards to ensure regulatory compliance and engineering accuracy.</p>
+            </div>
+        </section>
+
+        <!-- Compliance Section -->
+        <section id="compliance" class="manual-card animate-on-scroll">
+            <div class="card-icon safety-icon"><i class="fas fa-shield-check"></i></div>
+            <div class="card-body">
+                <h2 class="section-title">5. Compliance Solutions</h2>
+                <div class="solutions-wrapper">
+                    <div class="solution-item">
+                        <div class="solution-header">
+                            <i class="fas fa-bolt"></i>
+                            <h4>Engine Power Limitation (EPL)</h4>
+                        </div>
+                        <p>The most common technical solution for EEXI compliance. Our tool recommends the exact MCR<sub>lim</sub> needed to pass.</p>
+                    </div>
+                    <div class="solution-item">
+                        <div class="solution-header">
+                            <i class="fas fa-leaf"></i>
+                            <h4>Operational Efficiency</h4>
+                        </div>
+                        <p>Improve CII ratings through slow steaming, route optimization, and frequent hull cleaning.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
     </div>
 
-    <div style="background: #f8fafc; padding: 3rem; text-align: center; border-top: 1px solid var(--border);">
-        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Ready to start your assessment?</p>
-        <div style="display: flex; gap: 1rem; justify-content: center;">
-            <a href="/" class="btn btn-primary"><i class="fas fa-calculator"></i> Go to EEXI</a>
-            <a href="/cii" class="btn btn-secondary"><i class="fas fa-chart-line"></i> Go to CII</a>
+    <!-- Call to Action -->
+    <footer class="manual-cta">
+        <h3>Ready to ensure compliance?</h3>
+        <div class="cta-buttons">
+            <a href="/" class="btn btn-primary btn-lg">Start EEXI Calculation</a>
+            <a href="/cii" class="btn btn-outline btn-lg">Start CII Analysis</a>
         </div>
-    </div>
+    </footer>
 </div>
+
+<style>
+/* Manual Specific Styles */
+.manual-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-bottom: 5rem;
+}
+
+.manual-hero {
+    position: relative;
+    background: url('https://images.unsplash.com/photo-1516216628859-9bccecad13ef?auto=format&fit=crop&q=80&w=2000') center/cover;
+    height: 400px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-align: center;
+    overflow: hidden;
+    margin-bottom: -100px;
+    box-shadow: var(--shadow-lg);
+}
+
+.hero-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(59, 130, 246, 0.4) 100%);
+}
+
+.hero-content {
+    position: relative;
+    z-index: 1;
+}
+
+.manual-tag {
+    background: var(--accent);
+    padding: 0.4rem 1rem;
+    border-radius: 99px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 1.5rem;
+    display: inline-block;
+}
+
+.hero-content h1 {
+    font-size: 3.5rem;
+    margin-bottom: 0.5rem;
+    color: white;
+    text-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.hero-content p {
+    font-size: 1.25rem;
+    opacity: 0.9;
+}
+
+.manual-sidebar-nav {
+    position: sticky;
+    top: 100px;
+    z-index: 100;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 3rem;
+}
+
+.nav-links-wrapper {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    padding: 0.75rem;
+    border-radius: 99px;
+    display: flex;
+    gap: 0.5rem;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--glass-border);
+}
+
+.nav-dot {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 1.25rem;
+    border-radius: 99px;
+    text-decoration: none;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.nav-dot:hover {
+    background: #f1f5f9;
+    color: var(--primary);
+}
+
+.nav-dot i {
+    font-size: 1rem;
+}
+
+.manual-content-wrapper {
+    padding: 0 1rem;
+}
+
+.manual-card {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: 3rem;
+    margin-bottom: 4rem;
+    box-shadow: var(--shadow);
+    display: flex;
+    gap: 2.5rem;
+    border: 1px solid var(--border);
+    transition: transform 0.3s ease;
+}
+
+.manual-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.card-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    flex-shrink: 0;
+    color: white;
+}
+
+.eexi-icon { background: linear-gradient(135deg, var(--accent) 0%, #2563eb 100%); box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3); }
+.cii-icon { background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3); }
+.egbp-icon { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3); }
+.math-icon { background: linear-gradient(135deg, var(--primary) 0%, #1e293b 100%); }
+.safety-icon { background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%); box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3); }
+
+.card-body {
+    flex: 1;
+}
+
+.section-title {
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+    color: var(--primary);
+}
+
+.info-box {
+    padding: 1.5rem;
+    border-radius: var(--radius-md);
+    background: #f8fafc;
+    margin-bottom: 2rem;
+    line-height: 1.8;
+}
+
+.accent-border { border-left: 5px solid var(--accent); }
+.cii-border { border-left: 5px solid #10b981; }
+.egbp-border { border-left: 5px solid #f59e0b; }
+
+.manual-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.feature-item h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--primary-light);
+}
+
+.feature-item p {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+}
+
+.pro-tip {
+    background: #fffbeb;
+    padding: 1.25rem;
+    border-radius: var(--radius-sm);
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    border: 1px solid #fef3c7;
+}
+
+.pro-tip i {
+    color: #f59e0b;
+    font-size: 1.25rem;
+    margin-top: 0.2rem;
+}
+
+.rating-visual {
+    display: flex;
+    gap: 0.5rem;
+    margin: 2rem 0;
+}
+
+.rating-step {
+    flex: 1;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 800;
+    border-radius: 8px;
+    font-size: 1.1rem;
+}
+
+.step-a { background: #059669; }
+.step-b { background: #10b981; }
+.step-c { background: #f59e0b; }
+.step-d { background: #ef4444; }
+.step-e { background: #991b1b; }
+
+.steps-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.step-card {
+    background: #f8fafc;
+    padding: 1.5rem;
+    border-radius: var(--radius-md);
+    position: relative;
+    border: 1px solid var(--border);
+}
+
+.step-num {
+    position: absolute;
+    top: -15px;
+    right: 20px;
+    font-size: 3rem;
+    font-weight: 900;
+    color: rgba(0,0,0,0.05);
+}
+
+.step-card h4 { margin-bottom: 0.75rem; color: var(--primary); }
+.step-card p { font-size: 0.85rem; color: var(--text-muted); }
+
+.formula-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.formula-item {
+    background: var(--primary);
+    color: white;
+    padding: 2rem;
+    border-radius: var(--radius-md);
+    text-align: center;
+}
+
+.formula-label {
+    display: block;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    margin-bottom: 1rem;
+    opacity: 0.6;
+}
+
+.formula-item code {
+    font-size: 1.1rem;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.solutions-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+.solution-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.solution-header i { color: var(--accent); font-size: 1.25rem; }
+
+.manual-cta {
+    background: white;
+    padding: 4rem 2rem;
+    border-radius: var(--radius-lg);
+    text-align: center;
+    border: 1px solid var(--border);
+    margin-top: 4rem;
+}
+
+.manual-cta h3 {
+    font-size: 2rem;
+    margin-bottom: 2rem;
+}
+
+.cta-buttons {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+    .manual-card {
+        flex-direction: column;
+        padding: 2rem;
+    }
+    .hero-content h1 { font-size: 2.5rem; }
+    .nav-links-wrapper { overflow-x: auto; max-width: 90vw; }
+}
+
+@media (max-width: 768px) {
+    .manual-grid, .steps-grid, .formula-container, .solutions-wrapper {
+        grid-template-columns: 1fr;
+    }
+    .cta-buttons { flex-direction: column; }
+    .nav-dot span { display: none; }
+}
+</style>
 {% endblock %}

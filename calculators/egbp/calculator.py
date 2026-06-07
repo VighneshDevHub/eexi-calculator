@@ -107,6 +107,11 @@ def colebrook_white(Re: float, epsilon_D: float) -> float:
     return lam
 
 def pipe_bend_xi(rd: float, angle_deg: float) -> float:
+    """
+    Loss coefficient for a circular pipe bend.
+    Interpolated from lookup table extracted from the Wärtsilä sheet.
+    Scaled by R/d relative to base R/d = 1.5.
+    """
     angles = sorted(_BEND_XI_BASE.keys())
     a_clip = max(angles[0], min(angles[-1], angle_deg))
     lo = max((a for a in angles if a <= a_clip), default=angles[0])
@@ -116,18 +121,26 @@ def pipe_bend_xi(rd: float, angle_deg: float) -> float:
     else:
         t = (a_clip - lo) / (hi - lo)
         xi_base = _BEND_XI_BASE[lo] + t * (_BEND_XI_BASE[hi] - _BEND_XI_BASE[lo])
-    return xi_base * (1.5 / max(rd, 0.5))
+    # R/d scaling: proportional to 1.5 / rd (larger radius = lower loss)
+    rd_safe = max(rd, 0.5)
+    return xi_base * (1.5 / rd_safe)
 
 def diffuser_xi(inlet_dia_mm: float, outlet_dia_mm: float) -> float:
+    """
+    Loss coefficient for a concentric pipe diffuser/reduction.
+    Uses the Borda-Carnot model for sudden expansion /
+    Weisbach model for contraction.
+    """
     if inlet_dia_mm <= 0 or outlet_dia_mm <= 0: return 0.45
     A1 = math.pi / 4 * (inlet_dia_mm / 1000) ** 2
     A2 = math.pi / 4 * (outlet_dia_mm / 1000) ** 2
     ratio = A1 / A2
-    if ratio < 1: # expansion
+    if ratio < 1: # expansion (diffuser)
         return (1 - ratio) ** 2
-    return 0.5 * (1 - 1 / ratio) # contraction
+    return 0.5 * (1 - 1 / ratio) # contraction (reduction)
 
 def orifice_xi(pipe_dia_mm: float, orifice_dia_mm: float) -> float:
+    """Loss coefficient for an orifice plate. β = d_orifice / d_pipe."""
     if pipe_dia_mm <= 0 or orifice_dia_mm <= 0: return 1.45
     beta = orifice_dia_mm / pipe_dia_mm
     if beta <= 0 or beta >= 1: return 1.45
@@ -148,39 +161,46 @@ def calculate_element(el: PipeElement, mass_flow: float, density: float, visc: f
     if etype == "pipe":
         lam = colebrook_white(Re, eps_D)
         xi = lam * (el.length_mm / 1000.0) / D if D > 0 else 0.0
-        note = f"lambda={lam:.4f} Re={Re:.0f}"
+        note = f"λ={lam:.4f} Re={Re:.0f}"
     elif etype == "pipe_bend":
         xi = pipe_bend_xi(el.rd, el.angle_deg)
-        note = f"R/d={el.rd} alpha={el.angle_deg} deg"
+        note = f"R/d={el.rd} α={el.angle_deg}°"
     elif etype == "diffuser":
         xi = diffuser_xi(el.inlet_a_mm, el.outlet_b_mm)
-        # Use inlet diameter for velocity calculation if provided
+        # velocity at inlet (smaller area)
         a_mm = min(el.inlet_a_mm, el.outlet_b_mm) if el.inlet_a_mm > 0 and el.outlet_b_mm > 0 else el.diameter_mm
         A_in = math.pi / 4 * (a_mm / 1000) ** 2 if a_mm > 0 else A
         v = Q / A_in if A_in > 0 else v
-        note = f"in={el.inlet_a_mm} out={el.outlet_b_mm}"
+        note = f"inlet={el.inlet_a_mm:.0f}mm outlet={el.outlet_b_mm:.0f}mm"
     elif etype == "wye_through":
         xi = FIXED_XI["wye_through_equal"]
+        note = "α=90° mixed equal flows"
     elif etype == "wye_branch":
         xi = FIXED_XI["wye_branch_45"]
+        note = "α=45°"
     elif etype == "silencer":
         xi = FIXED_XI["silencer_35dba"]
+        note = "35 dB(A) rated"
     elif etype == "boiler":
         xi = FIXED_XI["boiler"]
+        note = "Pmax≈150 mmWC"
     elif etype == "orifice":
         xi = orifice_xi(el.inlet_a_mm, el.outlet_b_mm)
-        note = f"pipe={el.inlet_a_mm} orifice={el.outlet_b_mm}"
+        note = f"pipe={el.inlet_a_mm:.0f}mm orifice={el.outlet_b_mm:.0f}mm"
     elif etype == "custom":
         xi = el.xi_custom
-        note = "user-defined xi"
+        note = "user-defined ξ"
+    elif etype == "outlet":
+        xi = FIXED_XI["outlet"]
+        note = "atmospheric discharge"
     else:
         xi = FIXED_XI.get(etype, 0.0)
 
-    el.velocity = round(v, 2)
+    el.velocity = round(v, 4)
     el.xi = round(xi, 6)
-    el.pressure_loss_pa = round(xi * dyn_p, 2)
-    el.reynolds = round(Re, 0)
-    el.friction_factor = round(lam, 4)
+    el.pressure_loss_pa = round(xi * dyn_p, 4)
+    el.reynolds = round(Re, 1)
+    el.friction_factor = round(lam, 6)
     el.note = note
     return el
 
@@ -188,8 +208,8 @@ def calculate_egbp(inputs: dict) -> dict:
     mass_flow = float(inputs["mass_flow_kgs"])
     temp_c = float(inputs["temp_tc_c"])
     max_bp = float(inputs.get("max_bp_pa", 3000))
-    density = exhaust_gas_density(temp_c)
-    visc = exhaust_gas_viscosity(temp_c)
+    density = float(inputs.get("density") or exhaust_gas_density(temp_c))
+    visc = float(inputs.get("kinematic_visc") or exhaust_gas_viscosity(temp_c))
     roughness = ROUGHNESS_MAP.get(inputs.get("roughness_key", "steel_welded"), 0.06096)
 
     elements = []
@@ -213,15 +233,31 @@ def calculate_egbp(inputs: dict) -> dict:
     status = "PASSED" if total_pa <= max_bp * 0.85 else "BORDERLINE" if total_pa <= max_bp else "FAILED"
     return {
         "total_pressure_pa": round(total_pa, 2),
-        "total_pressure_mmwc": round(total_pa * PA_TO_MMWC, 2),
-        "max_bp_pa": max_bp,
+        "total_pressure_mmwc": round(total_pa * PA_TO_MMWC, 3),
+        "max_bp_pa": round(max_bp, 1),
+        "max_bp_mmwc": round(max_bp * PA_TO_MMWC, 3),
         "status": status,
-        "margin_pa": round(max_bp - total_pa, 2),
-        "mass_flow_kgs": mass_flow,
+        "margin_pct": round(((max_bp - total_pa) / max_bp) * 100.0, 2),
+        "density": round(density, 6),
+        "kinematic_visc": round(visc, 10),
         "temp_tc_c": temp_c,
-        "roughness_key": inputs.get("roughness_key", "steel_welded"),
+        "mass_flow_kgs": mass_flow,
         "elements": [
-            {**el.__dict__, "label": ELEMENT_LABELS.get(el.element_type, el.element_type)}
+            {
+                "position": el.position,
+                "element_type": el.element_type,
+                "label": ELEMENT_LABELS.get(el.element_type, el.element_type),
+                "diameter_mm": el.diameter_mm,
+                "length_mm": el.length_mm,
+                "velocity": el.velocity,
+                "xi": el.xi,
+                "pressure_loss_pa": el.pressure_loss_pa,
+                "pressure_loss_mmwc": round(el.pressure_loss_pa * PA_TO_MMWC, 4),
+                "reynolds": el.reynolds,
+                "friction_factor": el.friction_factor,
+                "note": el.note,
+                "pct_of_total": round(el.pressure_loss_pa / total_pa * 100, 1) if total_pa > 0 else 0
+            }
             for el in elements
         ]
     }
