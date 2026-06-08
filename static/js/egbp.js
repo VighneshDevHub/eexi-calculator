@@ -3,32 +3,155 @@
  */
 
 let elements = [];
+let engines = [];
 let elId = 0;
+let engineId = 0;
 let lastEGBPResult = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     const addBtn = document.getElementById('addElement');
+    const addEngineBtn = document.getElementById('addEngine');
     const form = document.getElementById('egbpForm');
-    const presetSel = document.getElementById('enginePreset');
     const downloadBtn = document.getElementById('downloadEGBPReport');
 
     if (addBtn) addBtn.addEventListener('click', () => addElement());
+    if (addEngineBtn) addEngineBtn.addEventListener('click', () => addEngine());
     if (form) form.addEventListener('submit', handleEGBPCompute);
-    if (presetSel) presetSel.addEventListener('change', (e) => loadPreset(e.target.value));
     if (downloadBtn) downloadBtn.addEventListener('click', downloadEGBPReport);
 
-    // Initial element
+    // Initial source and element
+    addEngine('ME');
     addElement('pipe');
 });
 
-function loadPreset(key) {
-    if (!key) return;
-    const sel = document.getElementById('enginePreset');
-    const opt = sel.options[sel.selectedIndex];
+function addEngine(type = 'ME') {
+    const id = ++engineId;
+    const preset = ENGINE_PRESETS[type] || { mass_flow: 0, temp_tc: 0, max_bp_pa: 3000, roughness: 'steel_welded' };
+    engines.push({ 
+        id, 
+        type, 
+        mass_flow: preset.mass_flow, 
+        temp: preset.temp_tc,
+        max_bp: preset.max_bp_pa || 3000,
+        roughness: preset.roughness || 'steel_welded'
+    });
+    renderEngines();
+    calculateSystemTotals();
+}
+
+function removeEngine(id) {
+    engines = engines.filter(e => e.id !== id);
+    renderEngines();
+    calculateSystemTotals();
+}
+
+function updateEngineType(id, type) {
+    const engine = engines.find(e => e.id === id);
+    if (engine) {
+        engine.type = type;
+        const preset = ENGINE_PRESETS[type];
+        if (preset) {
+            engine.mass_flow = preset.mass_flow;
+            engine.temp = preset.temp_tc;
+            engine.max_bp = preset.max_bp_pa || 3000;
+            engine.roughness = preset.roughness || 'steel_welded';
+        }
+        renderEngines();
+        calculateSystemTotals();
+    }
+}
+
+function updateEngineParam(id, field, value) {
+    const engine = engines.find(e => e.id === id);
+    if (engine) {
+        engine[field] = field === 'roughness' ? value : (parseFloat(value) || 0);
+        calculateSystemTotals();
+    }
+}
+
+function renderEngines() {
+    const body = document.getElementById('enginesBody');
+    if (!body) return;
     
-    document.getElementById('mass_flow_kgs').value = opt.dataset.mass;
-    document.getElementById('temp_tc_c').value = opt.dataset.temp;
-    document.getElementById('max_bp_pa').value = opt.dataset.maxbp;
+    body.innerHTML = '';
+    engines.forEach((en, index) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${index + 1}</td>
+            <td>
+                <select class="type-select" onchange="updateEngineType(${en.id}, this.value)">
+                    <option value="custom" ${en.type === 'custom' ? 'selected' : ''}>-- Custom Source --</option>
+                    ${Object.entries(ENGINE_PRESETS).map(([key, p]) => `
+                        <option value="${key}" ${en.type === key ? 'selected' : ''}>${p.label}</option>
+                    `).join('')}
+                </select>
+            </td>
+            <td>
+                <div class="grid grid-4" style="gap: 0.5rem">
+                    <div class="field-group">
+                        <label style="font-size: 0.7rem; margin-bottom: 0.2rem">Mass Flow (kg/s)</label>
+                        <input type="number" step="0.001" placeholder="Mass Flow" 
+                            value="${en.mass_flow}" oninput="updateEngineParam(${en.id}, 'mass_flow', this.value)">
+                    </div>
+                    <div class="field-group">
+                        <label style="font-size: 0.7rem; margin-bottom: 0.2rem">Temp (°C)</label>
+                        <input type="number" step="0.1" placeholder="Temp" 
+                            value="${en.temp}" oninput="updateEngineParam(${en.id}, 'temp', this.value)">
+                    </div>
+                    <div class="field-group">
+                        <label style="font-size: 0.7rem; margin-bottom: 0.2rem">Max BP (Pa)</label>
+                        <input type="number" step="1" placeholder="Max BP" 
+                            value="${en.max_bp}" oninput="updateEngineParam(${en.id}, 'max_bp', this.value)">
+                    </div>
+                    <div class="field-group">
+                        <label style="font-size: 0.7rem; margin-bottom: 0.2rem">Roughness</label>
+                        <select onchange="updateEngineParam(${en.id}, 'roughness', this.value)">
+                            ${Object.entries(ROUGHNESS_OPTIONS).map(([key, val]) => `
+                                <option value="${key}" ${en.roughness === key ? 'selected' : ''}>
+                                    ${key.replace('_', ' ').title()} (${val}mm)
+                                </option>
+                            `).join('')}
+                        </select>
+                    </div>
+                </div>
+            </td>
+            <td>
+                <button type="button" class="btn btn-outline" onclick="removeEngine(${en.id})" style="color: var(--danger); padding: 0.5rem">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        body.appendChild(tr);
+    });
+}
+
+// Add String.prototype.title if it doesn't exist for roughness labels
+if (!String.prototype.title) {
+    String.prototype.title = function() {
+        return this.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+    };
+}
+
+function calculateSystemTotals() {
+    let totalMass = 0;
+    let weightedTempSum = 0;
+    let minMaxBp = Infinity;
+    let primaryRoughness = 'steel_welded';
+
+    engines.forEach((en, i) => {
+        totalMass += en.mass_flow;
+        weightedTempSum += (en.mass_flow * en.temp);
+        if (en.max_bp < minMaxBp) minMaxBp = en.max_bp;
+        if (i === 0) primaryRoughness = en.roughness; // Default to first engine's roughness
+    });
+
+    const avgTemp = totalMass > 0 ? weightedTempSum / totalMass : 0;
+    if (minMaxBp === Infinity) minMaxBp = 3000;
+
+    document.getElementById('mass_flow_kgs').value = totalMass.toFixed(3);
+    document.getElementById('temp_tc_c').value = avgTemp.toFixed(1);
+    document.getElementById('max_bp_pa').value = minMaxBp;
+    document.getElementById('roughness_key').value = primaryRoughness;
 }
 
 function addElement(type = 'pipe') {
@@ -136,6 +259,14 @@ async function handleEGBPCompute(e) {
         temp_tc_c: parseFloat(document.getElementById('temp_tc_c').value),
         max_bp_pa: parseFloat(document.getElementById('max_bp_pa').value),
         roughness_key: document.getElementById('roughness_key').value,
+        engines: engines.map(en => ({
+            type: en.type,
+            label: ENGINE_PRESETS[en.type]?.label || 'Custom Source',
+            mass_flow: en.mass_flow,
+            temp: en.temp,
+            max_bp: en.max_bp,
+            roughness: en.roughness
+        })),
         elements: elements.map((el, i) => {
             const container = document.getElementById(`inputs-${el.id}`);
             return {

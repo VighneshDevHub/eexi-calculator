@@ -721,6 +721,14 @@ td {
   display: none !important;
 }
 
+.bg-light {
+  background-color: var(--bg-body) !important;
+}
+
+.mt-6 {
+  margin-top: 2rem;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

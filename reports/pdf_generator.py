@@ -174,13 +174,37 @@ def generate_egbp_pdf_report(result_data):
     elements.append(Paragraph(f"Report Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
     elements.append(Spacer(1, 20))
     
+    # Exhaust Gas Sources
+    if result_data.get('engines'):
+        elements.append(Paragraph("Exhaust Gas Sources", section_style))
+        engine_table_data = [["Source", "Mass Flow (kg/s)", "Temp (°C)", "Max BP (Pa)", "Roughness"]]
+        for en in result_data['engines']:
+            engine_table_data.append([
+                en.get('label', 'Custom'),
+                str(en.get('mass_flow', 0)),
+                str(en.get('temp', 0)),
+                str(en.get('max_bp', 3000)),
+                en.get('roughness', 'steel_welded').replace('_', ' ').title()
+            ])
+        
+        t0 = Table(engine_table_data, colWidths=[150, 90, 70, 70, 90])
+        t0.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f1f5f9')),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('PADDING', (0, 0), (-1, -1), 6),
+        ]))
+        elements.append(t0)
+        elements.append(Spacer(1, 10))
+
     # System Parameters
-    elements.append(Paragraph("System Parameters", section_style))
+    elements.append(Paragraph("System Summary (Combined)", section_style))
     sys_info = [
-        ["Mass Flow", f"{result_data['mass_flow_kgs']} kg/s"],
-        ["Temperature", f"{result_data['temp_tc_c']} °C"],
-        ["Pipe Roughness", f"{result_data.get('roughness_key', 'steel_welded').replace('_', ' ').title()}"],
-        ["Max Allowed BP", f"{result_data['max_bp_pa']} Pa"]
+        ["Total Mass Flow", f"{result_data['mass_flow_kgs']} kg/s"],
+        ["Avg. Temperature", f"{result_data['temp_tc_c']} °C"],
+        ["System Max BP Limit", f"{result_data['max_bp_pa']} Pa"],
+        ["Design Roughness", f"{result_data.get('roughness_key', 'steel_welded').replace('_', ' ').title()}"]
     ]
     
     t1 = Table(sys_info, colWidths=[200, 250])

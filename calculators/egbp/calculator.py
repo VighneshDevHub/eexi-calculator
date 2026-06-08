@@ -40,10 +40,12 @@ FIXED_XI: dict[str, float] = {
 }
 
 ENGINE_PRESETS: dict[str, dict] = {
-    "ME": {"label": "Main Engine", "mass_flow": 80.651, "temp_tc": 240.0, "max_bp_pa": 3000.0, "roughness": "steel_welded"},
-    "AE_T1": {"label": "Aux Engine T1 (9L32/40)", "mass_flow": 7.395, "temp_tc": 365.0, "max_bp_pa": 3000.0, "roughness": "steel_welded"},
-    "AE_T2": {"label": "Aux Engine T2 (8L32/40)", "mass_flow": 6.545, "temp_tc": 365.0, "max_bp_pa": 3000.0, "roughness": "steel_welded"},
-    "OFB": {"label": "Oil Fired Boiler", "mass_flow": 1.68, "temp_tc": 300.0, "max_bp_pa": 500.0, "roughness": "steel_welded"},
+    "ME":  {"label": "Main Engine", "mass_flow": 80.651, "temp_tc": 240.0, "max_bp_pa": 3000.0, "roughness": "steel_welded"},
+    "AE1": {"label": "Auxiliary Engine 1", "mass_flow": 7.395, "temp_tc": 365.0, "max_bp_pa": 3000.0, "roughness": "steel_welded"},
+    "AE2": {"label": "Auxiliary Engine 2", "mass_flow": 7.395, "temp_tc": 365.0, "max_bp_pa": 3000.0, "roughness": "steel_welded"},
+    "AE3": {"label": "Auxiliary Engine 3", "mass_flow": 7.395, "temp_tc": 365.0, "max_bp_pa": 3000.0, "roughness": "steel_welded"},
+    "AE4": {"label": "Auxiliary Engine 4", "mass_flow": 7.395, "temp_tc": 365.0, "max_bp_pa": 3000.0, "roughness": "steel_welded"},
+    "OFB": {"label": "Oil-Fired Boiler", "mass_flow": 1.68, "temp_tc": 300.0, "max_bp_pa": 500.0, "roughness": "steel_welded"},
 }
 
 PA_TO_MMWC = 1.0 / 9.80665
@@ -242,6 +244,8 @@ def calculate_egbp(inputs: dict) -> dict:
         "kinematic_visc": round(visc, 10),
         "temp_tc_c": temp_c,
         "mass_flow_kgs": mass_flow,
+        "roughness_key": inputs.get("roughness_key", "steel_welded"),
+        "engines": inputs.get("engines", []),
         "elements": [
             {
                 "position": el.position,
