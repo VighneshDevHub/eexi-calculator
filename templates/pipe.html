@@ -1,0 +1,198 @@
+{% extends "layout.html" %} {% block title %}Pipe Wall Thickness - ASME B31.3{%
+endblock %} {% block content %}
+<div class="card">
+  <div class="card-header">
+    <h1><i class="fas fa-cube"></i> Pipe Wall Thickness Calculator</h1>
+    <p class="subtitle">
+      Calculate pipe wall thickness per ASME B31.3 §304.1.2
+    </p>
+  </div>
+
+  <form id="pipeForm" novalidate>
+    <div class="grid grid-3">
+      <div class="field-group">
+        <label for="nps">Nominal Pipe Size (NPS)</label>
+        <select id="nps" name="nps">
+          {% for key in nps_options %}
+          <option value="{{ key }}">NPS {{ key }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label for="pressure_mpa">Design Pressure (MPa)</label>
+        <input
+          type="number"
+          step="0.001"
+          id="pressure_mpa"
+          name="pressure_mpa"
+          required
+          placeholder="e.g., 1.0"
+        />
+      </div>
+
+      <div class="field-group">
+        <label for="temp_c">Design Temperature (°C)</label>
+        <input
+          type="number"
+          step="1"
+          id="temp_c"
+          name="temp_c"
+          required
+          placeholder="e.g., 200"
+        />
+      </div>
+    </div>
+
+    <div class="grid grid-3">
+      <div class="field-group">
+        <label for="material">Material</label>
+        <select id="material" name="material">
+          {% for key, label in material_options.items() %}
+          <option value="{{ key }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label for="weld_type">Weld Type</label>
+        <select id="weld_type" name="weld_type">
+          {% for key, label in weld_options.items() %}
+          <option value="{{ key }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label for="material_type">Material Type (Y Factor)</label>
+        <select id="material_type" name="material_type">
+          <option value="ferritic" selected>Ferritic Steel</option>
+          <option value="austenitic">Austenitic Steel</option>
+          <option value="other">Other Ductile Metals</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid grid-4">
+      <div class="field-group">
+        <label for="corrosion_mm">Corrosion Allowance (mm)</label>
+        <input
+          type="number"
+          step="0.1"
+          id="corrosion_mm"
+          name="corrosion_mm"
+          value="1.6"
+        />
+      </div>
+
+      <div class="field-group">
+        <label for="threaded">Threaded End?</label>
+        <select id="threaded" name="threaded">
+          <option value="false" selected>No</option>
+          <option value="true">Yes</option>
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label for="mill_tolerance">Mill Tolerance (%)</label>
+        <input
+          type="number"
+          step="0.1"
+          id="mill_tolerance"
+          name="mill_tolerance"
+          value="12.5"
+        />
+      </div>
+
+      <div class="field-group">
+        <label for="dext_override">OD Override (mm)</label>
+        <input
+          type="number"
+          step="0.1"
+          id="dext_override"
+          name="dext_override"
+          placeholder="Optional"
+        />
+      </div>
+    </div>
+
+    <div class="grid grid-2">
+      <div class="field-group">
+        <label for="s_allow_override">Allowable Stress Override (MPa)</label>
+        <input
+          type="number"
+          step="0.1"
+          id="s_allow_override"
+          name="s_allow_override"
+          placeholder="Optional"
+        />
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <button type="submit" class="btn btn-primary btn-block">
+        <i class="fas fa-play"></i> Calculate Wall Thickness
+      </button>
+    </div>
+  </form>
+</div>
+
+<div id="pipeResults" class="hidden">
+  <div class="card">
+    <div class="card-header">
+      <h2>Calculation Results</h2>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Pressure Design (t<sub>dis</sub>)</div>
+        <div id="r-tdis" class="metric-value">0</div>
+        <div class="metric-unit">mm</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Required (t<sub>req</sub>)</div>
+        <div id="r-treq" class="metric-value">0</div>
+        <div class="metric-unit">mm</div>
+      </div>
+      <div class="metric-card accent-card">
+        <div class="metric-label">Minimum (t<sub>min</sub>)</div>
+        <div id="r-tmin" class="metric-value">0</div>
+        <div class="metric-unit">mm</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Allowable Stress (S)</div>
+        <div id="r-S" class="metric-value">0</div>
+        <div class="metric-unit">MPa</div>
+      </div>
+    </div>
+
+    <div id="status-badge" class="status-badge"></div>
+
+    <div class="mt-4" style="text-align: center">
+      <button
+        id="downloadPipeReport"
+        class="btn btn-primary"
+        style="display: inline-flex; align-items: center; gap: 8px"
+      >
+        <i class="fas fa-download"></i> Download PDF Report
+      </button>
+    </div>
+
+    <h3>Recommended Schedule</h3>
+    <div id="recommended-schedule" class="schedule-grid"></div>
+
+    <div id="thick-wall-warning" class="warning-box hidden">
+      <i class="fas fa-exclamation-triangle"></i>
+      <div>Thick-wall condition detected. Consider Eq.3b for verification.</div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block scripts %}
+<script>
+  const MATERIAL_OPTIONS = {{ material_options_json | safe }};
+  const NPS_DEXT = {{ nps_dext_json | safe }};
+  const WELD_OPTIONS = {{ weld_options_json | safe }};
+  const NPS_OPTIONS = {{ nps_options | safe }};
+</script>
+<script src="{{ url_for('static', filename='js/pipe.js') }}"></script>
+{% endblock %}

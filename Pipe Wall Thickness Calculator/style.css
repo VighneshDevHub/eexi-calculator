@@ -1,0 +1,87 @@
+cat >> /home/claude/eexi_project/static/css/style.css << 'CSSEOF'
+
+/* ── Pipe wall thickness specific styles ───────────────────────────────────── */
+.pipe-hero { background: linear-gradient(135deg, #1a1200 0%, #3d2b00 100%); }
+.pipe-btn  { background: #3d2b00 !important; }
+.pipe-btn:hover { background: #5c4100 !important; }
+
+.pipe-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  padding: 2rem 1.5rem;
+  align-items: start;
+}
+.pipe-left  { display: flex; flex-direction: column; gap: 1rem; }
+.pipe-right { position: sticky; top: 1.5rem; display: flex; flex-direction: column; gap: .75rem; }
+@media (max-width: 960px) { .pipe-layout { grid-template-columns: 1fr; } .pipe-right { position: static; } }
+
+/* Unit converter bar */
+.unit-conv-bar {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  margin-top: .6rem; padding: .5rem .75rem;
+  background: var(--color-background-secondary);
+  border-radius: var(--border-radius-md); font-size: 12px;
+}
+.unit-conv-label { color: var(--color-text-tertiary); font-size: 11px; }
+.unit-conv-sep   { color: var(--color-text-tertiary); }
+.conv-inp {
+  height: 26px; width: 70px; padding: 0 6px;
+  border: 0.5px solid var(--color-border-secondary);
+  border-radius: var(--border-radius-md); font-size: 12px;
+  background: var(--color-background-primary); color: var(--color-text-primary);
+}
+.conv-inp:focus { outline: none; box-shadow: 0 0 0 2px var(--color-border-info); }
+
+/* Metrics row */
+.pipe-metrics {
+  display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px;
+  margin-bottom: .75rem;
+}
+@media (max-width: 700px) { .pipe-metrics { grid-template-columns: 1fr 1fr; } }
+.pipe-metric-card { text-align: center; padding: .9rem .75rem !important; }
+.pipe-metric-card.accent-card { border: 1.5px solid var(--color-border-info) !important; }
+.pipe-metric-label { font-size: 11px; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+.pipe-metric-val   { font-size: 1.25rem; font-weight: 500; color: var(--color-text-primary); font-family: var(--font-mono); }
+.pipe-metric-unit  { font-size: 11px; color: var(--color-text-tertiary); margin-top: 1px; }
+.pipe-metric-sub   { font-size: 10px; color: var(--color-text-tertiary); margin-top: 3px; }
+
+/* Schedule grid */
+.sch-grid {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: .25rem;
+}
+.sch-pill {
+  border-radius: var(--border-radius-md);
+  border: 0.5px solid var(--color-border-secondary);
+  padding: 5px 10px; font-size: 12px; text-align: center; min-width: 68px;
+}
+.sch-ok    { background: var(--color-background-success); border-color: transparent; color: var(--color-text-success); }
+.sch-no    { opacity: .35; text-decoration: line-through; }
+.sch-first { border: 1.5px solid var(--color-text-success) !important; font-weight: 500; }
+.sch-pill-name { font-weight: 500; }
+.sch-pill-t    { font-size: 11px; color: inherit; opacity: .85; }
+.sch-pill-tag  { font-size: 10px; margin-top: 2px; }
+
+/* Step-by-step */
+.pipe-steps { display: flex; flex-direction: column; gap: 6px; }
+.pipe-step  {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: .6rem .75rem;
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-md);
+}
+.pipe-step-num {
+  flex-shrink: 0; width: 22px; height: 22px;
+  border-radius: 50%; background: var(--color-background-secondary);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 500; color: var(--color-text-secondary);
+}
+.pipe-step-body { flex: 1; min-width: 0; }
+.pipe-step-title   { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .05em; color: var(--color-text-secondary); margin-bottom: 3px; }
+.pipe-step-formula { font-size: 12.5px; font-family: var(--font-mono); color: var(--color-text-primary); line-height: 1.7; }
+.pipe-step-note    { font-size: 11px; color: var(--color-text-tertiary); margin-top: 3px; }
+CSSEOF
+echo "CSS OK"
+Output
+
+CSS OK

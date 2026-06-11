@@ -365,6 +365,15 @@ h3 {
   border: 1px solid var(--border);
 }
 
+.card-header {
+  margin-bottom: 1.5rem;
+}
+
+.subtitle {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
 /* Grid System */
 .grid-2,
 .grid-3,
@@ -397,6 +406,11 @@ h3 {
   text-align: center;
   border: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
+}
+
+.metric-card.accent-card {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .metric-label {
@@ -592,6 +606,92 @@ select:focus {
 .badge-warning {
   background: #fef3c7;
   color: #92400e;
+}
+
+/* Status Badges */
+.status-badge {
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  text-align: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
+}
+
+.status-pass {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-fail {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* Warning Box */
+.warning-box {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: #fef3c7;
+  border-left: 4px solid #f59e0b;
+  border-radius: var(--radius-sm);
+  margin-bottom: 1.5rem;
+}
+
+.warning-box i {
+  color: #f59e0b;
+  font-size: 1.5rem;
+}
+
+/* Schedule Grid */
+.schedule-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.schedule-item {
+  padding: 1rem;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.schedule-item.adequate {
+  border-color: var(--success);
+  background: #f0fdf4;
+}
+
+.schedule-item.inadequate {
+  border-color: #cbd5e1;
+  opacity: 0.6;
+}
+
+.schedule-item.recommended {
+  border-color: var(--accent);
+  background: #eff6ff;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.schedule-name {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--primary);
+  margin-bottom: 0.25rem;
+}
+
+.schedule-thickness {
+  font-size: 0.9rem;
+  color: var(--text-muted);
 }
 
 /* Tables */

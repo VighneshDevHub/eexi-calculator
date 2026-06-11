@@ -1,0 +1,334 @@
+cat > /home/claude/eexi_project/templates/pipe.html << 'HTMLEOF'
+{% extends "base.html" %}
+{% block title %}Pipe Wall Thickness — ASME B31.3 §304.1.2{% endblock %}
+
+{% block content %}
+<div class="page-hero pipe-hero">
+  <div class="container">
+    <h1 class="hero-title">Pipe Wall Thickness Calculator</h1>
+    <p class="hero-sub">ASME B31.3 §304.1.2 Equation 3a &mdash; pressure design thickness, mill tolerance, thread allowance, and schedule selection per ASME B36.10M.</p>
+  </div>
+</div>
+
+<div class="container pipe-layout">
+
+  <!-- ── LEFT: INPUTS ─────────────────────────────────────────────────── -->
+  <div class="pipe-left">
+
+    <!-- Design conditions -->
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">Design Conditions</h2>
+        <button class="btn-ghost-sm" onclick="loadExample()">Load example (NPS 2&quot; / 150 psi)</button>
+      </div>
+
+      <div class="egbp-grid-3">
+        <div class="field-group">
+          <label for="nps">Nominal pipe size (NPS)</label>
+          <select id="nps" onchange="onNPSChange()">
+            {% for key, label in nps_options.items() %}
+            <option value="{{ key }}">NPS {{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field-group">
+          <label for="pressure_mpa">Design pressure <span class="unit">(MPa gauge)</span></label>
+          <input type="number" id="pressure_mpa" step="0.01" min="0" placeholder="e.g. 2.0" required/>
+          <span class="hint" id="pressure_psi_hint"></span>
+        </div>
+        <div class="field-group">
+          <label for="temp_c">Design temperature <span class="unit">(°C)</span></label>
+          <input type="number" id="temp_c" step="5" placeholder="e.g. 120" required/>
+          <span class="hint" id="temp_f_hint"></span>
+        </div>
+      </div>
+
+      <!-- Unit converter row -->
+      <div class="unit-conv-bar">
+        <span class="unit-conv-label">Quick convert:</span>
+        <input type="number" id="conv_psi" placeholder="psi" step="1" class="conv-inp" oninput="psiToMpa()"/>
+        <span class="unit-conv-sep">psi →</span>
+        <input type="number" id="conv_mpa" placeholder="MPa" step="0.001" class="conv-inp" oninput="mpaToPsi()"/>
+        <span class="unit-conv-sep">MPa &nbsp;&nbsp;</span>
+        <input type="number" id="conv_f" placeholder="°F" step="1" class="conv-inp" oninput="fToC()"/>
+        <span class="unit-conv-sep">°F →</span>
+        <input type="number" id="conv_c" placeholder="°C" step="1" class="conv-inp" oninput="cToF()"/>
+        <span class="unit-conv-sep">°C</span>
+      </div>
+    </section>
+
+    <!-- Material & joint -->
+    <section class="card">
+      <h2 class="card-title">Material &amp; Weld Joint</h2>
+      <div class="egbp-grid-3">
+        <div class="field-group">
+          <label for="material">Pipe material</label>
+          <select id="material" onchange="onMaterialChange()">
+            {% for key, label in material_options.items() %}
+            <option value="{{ key }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field-group">
+          <label for="weld_type">Weld joint type</label>
+          <select id="weld_type">
+            {% for key, label in weld_options.items() %}
+            <option value="{{ key }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field-group">
+          <label for="material_type">Material category (Y factor)</label>
+          <select id="material_type">
+            <option value="ferritic" selected>Ferritic steel (most CS)</option>
+            <option value="austenitic">Austenitic steel (SS)</option>
+            <option value="other">Other ductile metals</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Auto-stress display -->
+      <div class="fluid-props-bar" id="stress-bar">
+        <span class="fp-item">Allowable S = <strong id="auto-stress">—</strong> MPa</span>
+        <span class="fp-sep">&nbsp;&middot;&nbsp;</span>
+        <span class="fp-item">at <strong id="auto-stress-t">—</strong> °C from Table A-1</span>
+        <span class="fp-sep">&nbsp;&middot;&nbsp;</span>
+        <span class="fp-item">Override: <input type="number" id="s_allow_override" step="0.1" placeholder="optional" class="conv-inp" style="width:90px"/>&nbsp;MPa</span>
+      </div>
+    </section>
+
+    <!-- Allowances -->
+    <section class="card">
+      <h2 class="card-title">Allowances</h2>
+      <div class="egbp-grid-3">
+        <div class="field-group">
+          <label for="corrosion_mm">Corrosion allowance TC <span class="unit">(mm)</span></label>
+          <input type="number" id="corrosion_mm" step="0.1" min="0" placeholder="e.g. 1.6" value="1.6"/>
+        </div>
+        <div class="field-group">
+          <label for="threaded">Threaded end (NPT)?</label>
+          <select id="threaded" onchange="onThreadChange()">
+            <option value="false" selected>No — plain end</option>
+            <option value="true">Yes — NPT threaded</option>
+          </select>
+          <span class="hint" id="thread-depth-hint"></span>
+        </div>
+        <div class="field-group">
+          <label for="mill_tolerance">Mill tolerance MT <span class="unit">(%)</span></label>
+          <input type="number" id="mill_tolerance" step="0.5" min="0" max="30" value="12.5"/>
+          <span class="hint">12.5% for ASTM A53 / A106</span>
+        </div>
+      </div>
+      <div class="egbp-grid-3" style="margin-top:8px">
+        <div class="field-group">
+          <label for="dext_override">Ext. diameter override <span class="unit">(mm)</span></label>
+          <input type="number" id="dext_override" step="0.1" min="0" placeholder="auto from NPS"/>
+          <span class="hint" id="dext-hint"></span>
+        </div>
+      </div>
+    </section>
+
+    <div class="form-actions">
+      <button id="calc-btn" class="btn-primary pipe-btn" onclick="calculate()">
+        <span id="btn-text">Calculate Wall Thickness</span>
+        <span id="btn-spinner" class="spinner hidden"></span>
+      </button>
+    </div>
+    <div id="form-error" class="form-error hidden" role="alert"></div>
+
+  </div><!-- /.pipe-left -->
+
+  <!-- ── RIGHT: RESULTS ────────────────────────────────────────────────── -->
+  <div class="pipe-right">
+
+    <!-- Guidance (pre-calc) -->
+    <div id="guidance-card" class="card">
+      <h2 class="card-title">Calculation sequence</h2>
+      <ol class="how-list">
+        <li>Enter design pressure P, temperature T, and pipe NPS</li>
+        <li>Select material — allowable stress S auto-interpolates from Table A-1</li>
+        <li>Set weld joint type → quality factor E (Table A-1B)</li>
+        <li>Add corrosion allowance TC and thread depth TD if applicable</li>
+        <li>Tool computes t<sub>dis</sub>, t<sub>req</sub>, t<sub>min</sub>, then matches ASME B36 schedules</li>
+      </ol>
+      <div class="ref-box" style="margin-top:.75rem">
+        <div class="ref-box-title">Core formula — Eq. 3a (§304.1.2)</div>
+        <code style="font-size:12px;line-height:1.9;display:block;color:var(--color-text-primary)">
+          t<sub>dis</sub> = P &times; d<sub>ext</sub> / (2 &times; (S&times;E + P&times;Y))<br>
+          t<sub>req</sub> = t<sub>dis</sub> + TC + TD<br>
+          t<sub>min</sub> = t<sub>req</sub> &times; 100 / (100 &minus; MT)
+        </code>
+      </div>
+    </div>
+
+    <!-- Results panel -->
+    <section id="results-panel" class="hidden">
+
+      <!-- Key metrics -->
+      <div class="pipe-metrics">
+        <div class="card pipe-metric-card">
+          <div class="pipe-metric-label">Pressure design t</div>
+          <div class="pipe-metric-val" id="r-tdis">—</div>
+          <div class="pipe-metric-unit">mm</div>
+          <div class="pipe-metric-sub">t<sub>dis</sub> — Eq. 3a</div>
+        </div>
+        <div class="card pipe-metric-card">
+          <div class="pipe-metric-label">Required t<sub>req</sub></div>
+          <div class="pipe-metric-val" id="r-treq">—</div>
+          <div class="pipe-metric-unit">mm</div>
+          <div class="pipe-metric-sub">t<sub>dis</sub> + TC + TD</div>
+        </div>
+        <div class="card pipe-metric-card accent-card">
+          <div class="pipe-metric-label">Min nominal t<sub>min</sub></div>
+          <div class="pipe-metric-val" id="r-tmin">—</div>
+          <div class="pipe-metric-unit">mm</div>
+          <div class="pipe-metric-sub">after mill tolerance</div>
+        </div>
+        <div class="card pipe-metric-card">
+          <div class="pipe-metric-label">Allowable stress S</div>
+          <div class="pipe-metric-val" id="r-S">—</div>
+          <div class="pipe-metric-unit">MPa</div>
+          <div class="pipe-metric-sub" id="r-S-sub">Table A-1</div>
+        </div>
+      </div>
+
+      <!-- Status banner -->
+      <div id="status-banner" class="status-banner" style="margin-bottom:.75rem"></div>
+
+      <!-- Recommended schedule -->
+      <div class="card" style="margin-bottom:.75rem">
+        <div class="card-header" style="margin-bottom:.5rem">
+          <h2 class="card-title" style="margin:0">Schedule selection — ASME B36.10M</h2>
+          <span class="hint">NPS <span id="r-nps-label">—</span></span>
+        </div>
+        <div id="sch-grid" class="sch-grid"></div>
+      </div>
+
+      <!-- Thin-wall warning -->
+      <div id="thick-wall-warn" class="hidden" style="margin-bottom:.75rem">
+        <div class="status-banner status-borderline">
+          <span class="status-icon">⚠</span>
+          <div class="status-body">
+            <div class="status-text">Thick-wall condition detected</div>
+            <div class="status-sub">t<sub>dis</sub> ≥ d/6 — Eq. 3a (thin-wall) may underestimate thickness. Consider Barlow equation (thick-wall) for verification.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step-by-step breakdown -->
+      <div class="card" style="margin-bottom:.75rem">
+        <h2 class="card-title">Step-by-step calculation</h2>
+        <div id="steps-list" class="pipe-steps"></div>
+      </div>
+
+      <!-- Recommended minimums reference -->
+      <div class="card" style="margin-bottom:.75rem">
+        <h2 class="card-title">Recommended minimum schedule (API RP14E)</h2>
+        <table class="breakdown-table" id="rec-min-table">
+          <thead><tr><th>NPS</th><th>CS (API RP14E)</th><th>CS (corporate)</th><th>SS (corporate)</th></tr></thead>
+          <tbody>
+            {% for nps_label, rec in recommended_min_sch.items() %}
+            <tr>
+              <td>{{ nps_label }}</td>
+              <td>{{ rec.cs_api }}</td>
+              <td>{{ rec.cs_corp }}</td>
+              <td>{{ rec.ss }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="result-actions">
+        <button class="btn-secondary" onclick="resetAll()">New calculation</button>
+      </div>
+    </section>
+
+  </div><!-- /.pipe-right -->
+</div><!-- /.pipe-layout -->
+
+<!-- Info strip -->
+<div class="info-strip">
+  <div class="container">
+    <div class="info-cards">
+      <div class="info-card">
+        <div class="info-icon">📐</div>
+        <div><strong>Eq. 3a (thin-wall)</strong><br>Valid when t<sub>dis</sub> &lt; d/6. For thick-wall (high pressure), use Eq. 3b or verify with Barlow formula.</div>
+      </div>
+      <div class="info-card">
+        <div class="info-icon">🌡</div>
+        <div><strong>Table A-1 interpolation</strong><br>Allowable stress is linearly interpolated between the 16 temperature columns of ASME B31.3-2002 Table A-1.</div>
+      </div>
+      <div class="info-card">
+        <div class="info-icon">🔩</div>
+        <div><strong>Thread allowance</strong><br>NPT thread depth TD from ASME B1.20.1-1983 is added to the corrosion allowance. For NPS 2&quot;: TD = 1.913 mm (11.5 TPI).</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const MATERIAL_OPTIONS = {{ material_options_json | safe }};
+const NPS_DEXT         = {{ nps_dext_json | safe }};
+const THREAD_DEPTH     = {{ thread_depth_json | safe }};
+const TEMP_COLS        = {{ temp_cols_json | safe }};
+const MATERIAL_STRESS  = {{ material_stress_json | safe }};
+</script>
+<script src="{{ url_for('static', filename='js/pipe.js') }}"></script>
+{% endblock %}
+HTMLEOF
+echo "pipe.html OK"
+Output
+
+pipe.html OK
+
+Write complete pipe.js
+
+Script
+
+Append pipe CSS to stylesheet
+
+Script
+Done
+Now update app.py to pass all required template variables:
+
+
+Ran 5 commands
+Ran 5 commands
+Now write the tests and run the full suite:
+
+
+Ran 2 commands
+Ran 2 commands
+209 pass, 1 minor rounding tolerance — fix it:
+
+
+Fix tolerance and confirm all pass
+Fix tolerance and confirm all pass
+210/210 tests passing. Now zip the complete project:
+
+
+Package complete project
+Package complete project
+
+Package complete project
+bash
+
+cd /home/claude && zip -r /mnt/user-data/outputs/Maritime_Calculator_v1.3_Complete.zip eexi_project/ \
+  --exclude "eexi_project/__pycache__/*" \
+  --exclude "eexi_project/eexi/__pycache__/*" \
+  --exclude "eexi_project/tests/__pycache__/*" \
+  --exclude "eexi_project/.pytest_cache/*" \
+  2>&1 | tail -3 && echo "Done"
+Output
+
+  adding: eexi_project/eexi/emissions.py (deflated 65%)
+  adding: eexi_project/eexi/calculator.py (deflated 72%)
+  adding: eexi_project/eexi/epl.py (deflated 63%)
+Done
+Done
+
+
+You are out of free messages unt

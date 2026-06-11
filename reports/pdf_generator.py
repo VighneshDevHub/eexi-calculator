@@ -2,7 +2,7 @@ import os
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
 from datetime import datetime
 
 def generate_pdf_report(vessel_data, result_data):
@@ -364,6 +364,147 @@ def generate_cii_pdf_report(vessel_data, result_data):
         ('PADDING', (0, 0), (-1, -1), 6),
     ]))
     elements.append(t3)
+    
+    doc.build(elements)
+    return file_path
+
+def generate_pipe_pdf_report(input_data, result_data):
+    """
+    Generates a PDF report for the Pipe Wall Thickness calculation per ASME B31.3.
+    """
+    reports_dir = os.path.join(os.getcwd(), 'reports', 'generated')
+    if not os.path.exists(reports_dir):
+        os.makedirs(reports_dir)
+        
+    time_for_filename = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename = f"Pipe_Wall_Report_{time_for_filename}.pdf"
+    file_path = os.path.join(reports_dir, filename)
+    
+    doc = SimpleDocTemplate(file_path, pagesize=A4)
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle(
+        'TitleStyle',
+        parent=styles['Heading1'],
+        fontSize=24,
+        textColor=colors.HexColor('#0f172a'),
+        alignment=1,
+        spaceAfter=30
+    )
+    
+    section_style = ParagraphStyle(
+        'SectionStyle',
+        parent=styles['Heading2'],
+        fontSize=14,
+        textColor=colors.HexColor('#f59e0b'),
+        spaceBefore=20,
+        spaceAfter=10
+    )
+
+    elements = []
+    
+    # Title
+    elements.append(Paragraph("ASME B31.3 Pipe Wall Thickness Report", title_style))
+    elements.append(Paragraph(f"Report Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
+    elements.append(Spacer(1, 20))
+    
+    # Input Parameters
+    elements.append(Paragraph("Input Parameters", section_style))
+    
+    from calculators.pipe_wall import MATERIAL_LABELS, WELD_LABELS
+    material_label = MATERIAL_LABELS.get(input_data.get('material', 'A106B'), input_data.get('material', 'Unknown'))
+    weld_label = WELD_LABELS.get(input_data.get('weld_type', 'S'), input_data.get('weld_type', 'Unknown'))
+    
+    pipe_info = [
+        ["Nominal Pipe Size", f"NPS {input_data.get('nps', 'N/A')}"],
+        ["Outside Diameter", f"{result_data.get('dext_mm', 'N/A')} mm"],
+        ["Design Pressure", f"{input_data.get('pressure_mpa', 'N/A')} MPa"],
+        ["Design Temperature", f"{input_data.get('temp_c', 'N/A')} °C"],
+        ["Material", material_label],
+        ["Weld Type", weld_label],
+        ["Material Type", input_data.get('material_type', 'Ferritic').capitalize()],
+        ["Corrosion Allowance", f"{input_data.get('corrosion_mm', 'N/A')} mm"],
+        ["Threaded Connection", "Yes" if input_data.get('threaded', False) else "No"],
+        ["Mill Tolerance", f"{input_data.get('mill_tolerance', 12.5)}%"],
+    ]
+    
+    t1 = Table(pipe_info, colWidths=[200, 250])
+    t1.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f8fafc')),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('PADDING', (0, 0), (-1, -1), 6),
+        ('FONTSIZE', (0, 0), (-1, -1), 11),
+    ]))
+    elements.append(t1)
+    
+    # Calculation Details
+    elements.append(Paragraph("Calculation Details", section_style))
+    
+    calc_info = [
+        ["Pressure Design Thickness (t_dis)", f"{result_data.get('t_dis_mm', 'N/A'):.3f} mm"],
+        ["Corrosion Allowance (CA)", f"{result_data.get('CA_mm', 'N/A'):.3f} mm"],
+        ["Thread Depth (TD)", f"{result_data.get('TD_mm', 'N/A'):.3f} mm"],
+        ["Allowable Stress (S)", f"{result_data.get('S_mpa', 'N/A'):.2f} MPa"],
+        ["Weld Joint Efficiency (E)", f"{result_data.get('E_factor', 'N/A'):.3f}"],
+        ["Y Coefficient (Y)", f"{result_data.get('Y_coeff', 'N/A'):.3f}"],
+    ]
+    
+    t2 = Table(calc_info, colWidths=[200, 250])
+    t2.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f8fafc')),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('PADDING', (0, 0), (-1, -1), 6),
+        ('FONTSIZE', (0, 0), (-1, -1), 11),
+    ]))
+    elements.append(t2)
+    
+    # Results
+    elements.append(Paragraph("Results Summary", section_style))
+    
+    status = "PASS" if result_data.get('recommended_schedule') else "NO ADEQUATE SCHEDULE"
+    status_color = colors.green if status == "PASS" else colors.red
+    
+    results_info = [
+        ["Required Thickness (t_req)", f"{result_data.get('t_req_mm', 'N/A'):.3f} mm"],
+        ["Minimum Thickness (t_min)", f"{result_data.get('t_min_mm', 'N/A'):.3f} mm"],
+        ["Thin-Wall Condition", "OK" if result_data.get('thin_wall_ok', True) else "WARNING"],
+        ["Overall Status", Paragraph(f"<b>{status}</b>", ParagraphStyle('Status', textColor=status_color, fontSize=14))],
+    ]
+    
+    t3 = Table(results_info, colWidths=[200, 250])
+    t3.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f8fafc')),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('PADDING', (0, 0), (-1, -1), 6),
+        ('FONTSIZE', (0, 0), (-1, -1), 11),
+    ]))
+    elements.append(t3)
+    
+    # Schedule Recommendations
+    if result_data.get('schedules'):
+        elements.append(PageBreak())
+        elements.append(Paragraph("ASME B36.10M Schedule Thicknesses", section_style))
+        
+        schedule_table = [["Schedule", "Thickness (mm)", "Status"]]
+        for sched in result_data['schedules']:
+            sched_status = "✓ Adequate" if sched.get('adequate') else "✗ Inadequate"
+            schedule_table.append([
+                str(sched.get('schedule')),
+                f"{sched.get('thickness_mm', 'N/A'):.2f}",
+                sched_status
+            ])
+        
+        t4 = Table(schedule_table, colWidths=[150, 150, 150])
+        t4.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0f172a')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('PADDING', (0, 0), (-1, -1), 6),
+        ]))
+        elements.append(t4)
     
     doc.build(elements)
     return file_path

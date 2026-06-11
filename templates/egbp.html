@@ -203,7 +203,8 @@ Calculator{% endblock %} {% block content %}
     </div>
   </div>
 </div>
-{% endblock %} {% block scripts %}
+{% endblock %}
+{% block scripts %}
 <script>
   const ENGINE_PRESETS = {{ engine_presets | tojson | safe }};
   const ROUGHNESS_OPTIONS = {{ roughness_options | tojson | safe }};
