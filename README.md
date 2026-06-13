@@ -1,6 +1,6 @@
-# IMO Ship Emissions Calculator
+# IMO Ship Emissions & Engineering Calculator
 
-A full-stack web application for maritime compliance calculations, covering **EEXI**, **CII**, and **Exhaust Gas Back Pressure (EGBP)** — the three core engineering assessments required under IMO MARPOL Annex VI regulations. Built for naval architects, ship operators, and class society engineers.
+A full-stack web application for maritime compliance and engineering calculations, covering **EEXI**, **CII**, **Exhaust Gas Back Pressure (EGBP)**, and **Pipe Wall Thickness** — core engineering assessments required under IMO MARPOL Annex VI regulations and ASME B31.3. Built for naval architects, ship operators, and class society engineers.
 
 ---
 
@@ -16,6 +16,7 @@ A full-stack web application for maritime compliance calculations, covering **EE
    - [EEXI Calculator](#71-eexi-calculator)
    - [CII Calculator](#72-cii-calculator)
    - [EGBP Calculator](#73-egbp-calculator)
+   - [Pipe Wall Thickness Calculator](#74-pipe-wall-thickness-calculator)
 8. [Database Schema](#8-database-schema)
 9. [API Reference](#9-api-reference)
 10. [Installation & Setup](#10-installation--setup)
@@ -28,7 +29,7 @@ A full-stack web application for maritime compliance calculations, covering **EE
 
 ## 1. Project Overview
 
-This project was developed as part of an engineering internship at **Goltens** to digitize manual IMO compliance calculations that were previously done with spreadsheets and handbooks. The tool provides instant, auditable results for three distinct compliance assessments, with PDF report generation and a full calculation history log.
+This project was developed as part of an engineering internship at **Goltens** to digitize manual IMO compliance and piping engineering calculations that were previously done with spreadsheets and handbooks. The tool provides instant, auditable results for four distinct engineering assessments, with PDF report generation and a full calculation history log.
 
 **Version:** 2.0.0  
 **Framework:** Flask (Python)  
@@ -44,14 +45,16 @@ Since January 2023, all ships above 400 GT engaged in international voyages must
 - **EEXI (Energy Efficiency Existing Ship Index):** A one-time technical baseline compliance check — similar to a carbon rating for the ship's design.
 - **CII (Carbon Intensity Indicator):** An annual operational rating (A–E) that tracks how efficiently a ship actually operates year over year.
 
-Additionally, marine engineers frequently need to assess **Exhaust Gas Back Pressure** in the exhaust ducting systems to ensure engine performance is not compromised by poorly designed pipework.
+Additionally, marine engineers frequently need to assess:
+- **Exhaust Gas Back Pressure** in the exhaust ducting systems to ensure engine performance is not compromised by poorly designed pipework.
+- **Pipe Wall Thickness** to determine the minimum required wall thickness and ASME schedule selection for process and utility piping under pressure and temperature.
 
-**Before this tool:** Engineers performed these calculations manually in Excel, referencing multiple IMO resolution tables, applying correction factors by hand, and producing reports manually. This process was:
+**Before this tool:** Engineers performed these calculations manually in Excel, referencing multiple IMO resolution tables, ASME B31.3 code books, and Wärtsilä engineering documents. This process was:
 - Error-prone (manual transcription, wrong table lookups)
-- Time-consuming (30–90 minutes per vessel)
+- Time-consuming (30–90 minutes per vessel or system)
 - Difficult to audit or version-control
 
-**This tool solves all three problems** — calculations execute in under a second, all inputs/outputs are stored in a database, and PDF reports are generated on demand.
+**This tool solves all four problems** — calculations execute in under a second, all inputs/outputs are stored in a database, and PDF reports are generated on demand.
 
 ---
 
@@ -88,8 +91,21 @@ Additionally, marine engineers frequently need to assess **Exhaust Gas Back Pres
 - Per-element breakdown with velocity, ξ, Reynolds number, friction factor
 - PDF report with pipeline elements table
 
+### Pipe Wall Thickness Calculator
+- Minimum required wall thickness per ASME B31.3 §304.1.2
+- Pressure design thickness (Eq. 3a): t = PD / 2(SE + PY)
+- 10 pipe materials: A106 A/B/C, A53 A/B, API 5L B/X42/X52, SS304L, SS316L
+- Allowable stress S: linear interpolation from ASME Table A-1 across 15 temperature points (up to 565°C)
+- 5 weld joint efficiency types: Seamless (E=1.0), ERW (0.85), LPG (0.6), FG (0.7), FBW (0.9)
+- Y coefficient calculation per §304.1.1 for ferritic, austenitic, and other material types
+- Corrosion allowance, NPT thread depth correction, and mill tolerance (default 12.5%)
+- 23 NPS sizes (1/8″ to 24″) with ASME B36.10M schedule adequacy table
+- Thin-wall condition check (t < D/6)
+- PASS / FAIL status with recommended minimum schedule
+- PDF report generation
+
 ### General
-- Calculation history for all three calculator types, unified and time-sorted
+- Unified calculation history for all four calculator types, time-sorted
 - Admin dashboard with compliance statistics
 - Manual / Reference guide page
 - SQLite persistence with SQLAlchemy ORM
@@ -108,16 +124,18 @@ Additionally, marine engineers frequently need to assess **Exhaust Gas Back Pres
 ┌────────────────────────▼────────────────────────────────┐
 │                    Flask App  (app.py)                   │
 │                                                         │
-│  Routes:  /calculate  /cii  /egbp  /report  /history   │
-│           /api/calculate-cii  /api/calculate-egbp       │
-│           /api/cii-report  /api/egbp-report             │
-└──────┬──────────────────┬──────────────────┬────────────┘
-       │                  │                  │
-┌──────▼──────┐  ┌────────▼──────┐  ┌───────▼──────────┐
-│  calculators│  │   calculators │  │   calculators    │
-│  /eexi/     │  │   /cii/       │  │   /egbp/         │
-│ calculator  │  │  calculator   │  │  calculator      │
-└──────┬──────┘  └───────────────┘  └──────────────────┘
+│  Routes:  /calculate  /cii  /egbp  /pipe  /report      │
+│           /history  /admin  /manual                     │
+│           /api/calculate-cii   /api/cii-report          │
+│           /calculate-egbp      /api/egbp-report         │
+│           /calculate-pipe      /api/pipe-report         │
+└──────┬──────────────┬──────────────┬──────────────┬─────┘
+       │              │              │              │
+┌──────▼──────┐ ┌─────▼──────┐ ┌────▼──────┐ ┌────▼──────────┐
+│  calculators│ │ calculators│ │calculators│ │  calculators  │
+│  /eexi/     │ │  /cii/     │ │  /egbp/   │ │  /pipe_wall/  │
+│ calculator  │ │ calculator │ │ calculator│ │  calculator   │
+└──────┬──────┘ └────────────┘ └───────────┘ └───────────────┘
        │
   ┌────▼─────────────────────────────┐
   │  Sub-modules                     │
@@ -128,15 +146,17 @@ Additionally, marine engineers frequently need to assess **Exhaust Gas Back Pres
        │
 ┌──────▼──────────────────────────────────────────────────┐
 │                   database/db.py                        │
-│    Vessel  |  CIICalculation  |  EGBPCalculation        │
+│  Vessel | CIICalculation | EGBPCalculation              │
+│  PipeWallCalculation                                    │
 │                SQLite  (instance/vessels.db)            │
 └─────────────────────────────────────────────────────────┘
        │
 ┌──────▼──────────────────────────────────────────────────┐
 │              reports/pdf_generator.py                   │
-│   generate_pdf_report()  — EEXI                        │
-│   generate_cii_pdf_report()  — CII                     │
+│   generate_pdf_report()       — EEXI                   │
+│   generate_cii_pdf_report()   — CII                    │
 │   generate_egbp_pdf_report()  — EGBP                   │
+│   generate_pipe_pdf_report()  — Pipe Wall              │
 │              (ReportLab)                                │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -178,16 +198,20 @@ eexi-calculator/
 │   ├── egbp/
 │   │   ├── calculator.py           # EGBP pressure loss pipeline
 │   │   └── __init__.py
+│   ├── pipe_wall/
+│   │   ├── calculator.py           # ASME B31.3 pipe wall thickness calculator
+│   │   └── __init__.py
 │   └── utils/
 │       ├── fuel_factors.py         # CF values per MARPOL Annex VI
 │       ├── ship_params.py          # EEXI reference line params + reduction factors
 │       └── validators.py           # Input validation
 │
 ├── database/
-│   └── db.py                       # SQLAlchemy models: Vessel, CIICalculation, EGBPCalculation
+│   └── db.py                       # SQLAlchemy models: Vessel, CIICalculation,
+│                                   # EGBPCalculation, PipeWallCalculation
 │
 ├── reports/
-│   ├── pdf_generator.py            # ReportLab PDF builders for all 3 calculators
+│   ├── pdf_generator.py            # ReportLab PDF builders for all 4 calculators
 │   └── generated/                  # Auto-created; stores generated PDF files
 │
 ├── templates/                      # Jinja2 HTML templates
@@ -196,15 +220,16 @@ eexi-calculator/
 │   ├── result.html                 # EEXI results page
 │   ├── cii.html                    # CII input form + live results
 │   ├── egbp.html                   # EGBP builder + live results
-│   ├── history.html                # Unified calculation history
+│   ├── pipe.html                   # Pipe wall input form + live results
+│   ├── history.html                # Unified calculation history (all 4 types)
 │   ├── admin.html                  # Admin statistics dashboard
 │   └── manual.html                 # User reference guide
 │
-├── frontend/                       # React/Vite frontend (in development)
+├── frontend/                       # React/Vite frontend (scaffold, in development)
 │   ├── src/
 │   │   ├── App.tsx
 │   │   └── main.tsx
-│   ├── package.json
+│   ├── package.json                # React 19.2, TypeScript 6.0, Vite 8.0
 │   └── vite.config.ts
 │
 ├── instance/
@@ -311,8 +336,6 @@ Speed-power exponent **n** by ship type (from MEPC.333(76)):
 
 **MCR_lim** = PME_lim / 0.83 (since PME is defined at 83% of MCR for EPL cases)
 
-**Key bug fixed:** When auxiliary engine emissions are high relative to the EEXI budget, `PME_new` can go negative during iteration. Raising a negative number to a fractional power (`1/n`) produces a Python complex number, which then causes a `TypeError` on comparison. Fixed by clamping `current_pme` to zero at the start of each iteration and breaking early if the result is non-physical.
-
 ---
 
 ### 7.2 CII Calculator
@@ -333,11 +356,7 @@ Where:
 - **Capacity** = DWT (most types) or GT (Ro-Ro passenger, Cruise)
 - **Distance** = total distance sailed (nautical miles)
 - **D_x** = voyage deduction distance (port calls where fuel was consumed without sailing)
-- **Deductions** include voyage fuel (not counted), technical fuel deductions (TF), and correction factor terms per MEPC.355(78):
-  ```
-  Correction term = (0.75 − 0.03 × yi) × (FC_electrical + FC_boiler + FC_others)
-  yi = max(0, year − 2023)
-  ```
+- **Correction term** = (0.75 − 0.03 × yi) × (FC_electrical + FC_boiler + FC_others); yi = max(0, year − 2023)
 
 #### Required CII Formula
 
@@ -376,7 +395,7 @@ Rating boundaries use ship-type specific d-vectors from MEPC.354(78):
 ```
 A/B boundary = exp(d1) × Required CII
 B/C boundary = exp(d2) × Required CII
-C/D boundary = exp(d3) × Required CII   (d3 = 0.00 for all types, so boundary = Required CII)
+C/D boundary = exp(d3) × Required CII   (d3 = 0.00 for all types → boundary = Required CII)
 D/E boundary = exp(d4) × Required CII
 ```
 
@@ -436,10 +455,7 @@ Solved iteratively (up to 100 iterations) until |λ_new − λ| < 10⁻¹⁰
 For laminar flow (Re < 2300): λ = 64/Re
 ```
 
-Straight pipe loss coefficient:
-```
-ξ_pipe = λ × (L/D)
-```
+Straight pipe loss coefficient: `ξ_pipe = λ × (L/D)`
 
 #### Element Loss Coefficients
 
@@ -469,6 +485,66 @@ Straight pipe loss coefficient:
 | PASSED | Total ΔP ≤ 85% of Max Allowable BP |
 | BORDERLINE | 85% < Total ΔP ≤ Max Allowable BP |
 | FAILED | Total ΔP > Max Allowable BP |
+
+---
+
+### 7.4 Pipe Wall Thickness Calculator
+
+**Regulatory basis / Technical reference:** ASME B31.3 §304.1.2 (Process Piping Code)
+
+#### Pressure Design Thickness — Equation 3a
+
+```
+         P × D_ext
+t_dis = ─────────────────────
+         2 × (S × E + P × Y)
+```
+
+Where:
+- **P** = design gauge pressure (MPa)
+- **D_ext** = pipe outside diameter (mm), per ASME B36.10M for standard NPS sizes
+- **S** = allowable stress (MPa) — interpolated from ASME B31.3 Table A-1 based on material and temperature
+- **E** = weld joint quality factor (1.0 for seamless, 0.85 for ERW, etc.)
+- **Y** = temperature coefficient per §304.1.1 (0.4 below 482°C for ferritic; up to 0.7 for austenitic at high temp)
+
+#### Required and Minimum Thickness
+
+```
+t_req = t_dis + CA + TD            (CA = corrosion allowance, TD = thread depth if threaded)
+t_min = t_req × 100 / (100 − mill_tolerance)
+```
+
+#### Supported Materials
+
+| Code | Description |
+|---|---|
+| A106A | A106 Grade A |
+| A106B | A106 Grade B |
+| A106C | A106 Grade C |
+| A53A | A53 Grade A |
+| A53B | A53 Grade B |
+| API5LB | API 5L Grade B |
+| API5LX42 | API 5L X42 |
+| API5LX52 | API 5L X52 |
+| SS304L | 304L Stainless Steel |
+| SS316L | 316L Stainless Steel |
+
+#### Weld Joint Efficiency Factors
+
+| Code | Type | E Factor |
+|---|---|---|
+| S | Seamless | 1.0 |
+| ERW | Electric Resistance Welded | 0.85 |
+| FBW | Flash Butt Weld | 0.9 |
+| FG | Furnace Butt Weld | 0.7 |
+| LPG | Longitudinal PGW | 0.6 |
+
+#### NPS Range and Schedule Adequacy
+
+- Covers 23 NPS sizes: 1/8″ through 24″
+- Checks each available ASME B36.10M schedule (5, 10, 40, 80, 120, 160, XXS) against t_min
+- Returns the minimum adequate schedule and its actual wall thickness
+- Includes thin-wall check: flags if t_dis < D_ext / 6 (thick-wall formula applies beyond this limit)
 
 ---
 
@@ -524,6 +600,30 @@ Straight pipe loss coefficient:
 | total_pa | Float | Total back pressure (Pa) |
 | max_bp | Float | Maximum allowable back pressure (Pa) |
 | status | String(20) | `PASSED` / `BORDERLINE` / `FAILED` |
+| full_data | Text | Full result JSON (for PDF regeneration) |
+| created_at | DateTime | UTC timestamp |
+
+### `pipe_wall_calculations` — Pipe Wall Calculations
+
+| Column | Type | Description |
+|---|---|---|
+| id | Integer PK | Auto-increment |
+| nps | Float | Nominal pipe size |
+| pressure_mpa | Float | Design gauge pressure (MPa) |
+| temp_c | Float | Design temperature (°C) |
+| material | String(20) | Material code (e.g. A106B) |
+| weld_type | String(10) | Weld joint code (e.g. S, ERW) |
+| corrosion_mm | Float | Corrosion allowance (mm) |
+| threaded | Boolean | Whether NPT thread depth is applied |
+| mill_tolerance | Float | Mill tolerance (%) |
+| t_dis_mm | Float | Pressure design thickness (mm) |
+| t_req_mm | Float | Required thickness incl. allowances (mm) |
+| t_min_mm | Float | Minimum ordered thickness incl. mill tol. (mm) |
+| S_mpa | Float | Allowable stress at design temperature (MPa) |
+| dext_mm | Float | Pipe outside diameter (mm) |
+| recommended_schedule | String(10) | Minimum adequate ASME schedule |
+| available_thickness_mm | Float | Actual wall thickness of recommended schedule (mm) |
+| status | String(20) | `PASS` / `FAIL` |
 | full_data | Text | Full result JSON (for PDF regeneration) |
 | created_at | DateTime | UTC timestamp |
 
@@ -607,11 +707,50 @@ Straight pipe loss coefficient:
 }
 ```
 
+### Pipe Wall Thickness
+
+| Method | Route | Description |
+|---|---|---|
+| GET | `/pipe` | Pipe wall calculator page |
+| POST | `/calculate-pipe` | JSON API — calculate pipe wall, save to DB, return JSON result |
+| POST | `/api/pipe-report` | JSON API — generate and download pipe wall PDF |
+| GET | `/pipe-report-history/<calc_id>` | Download pipe wall PDF for historical calculation |
+
+**Request body for `/calculate-pipe`:**
+```json
+{
+  "nps": 4.0,
+  "pressure_mpa": 2.5,
+  "temp_c": 120.0,
+  "material": "A106B",
+  "weld_type": "S",
+  "corrosion_mm": 1.6,
+  "threaded": false,
+  "mill_tolerance": 12.5
+}
+```
+
+**Response:**
+```json
+{
+  "dext_mm": 114.3,
+  "S_mpa": 137.9,
+  "E_factor": 1.0,
+  "Y_coeff": 0.4,
+  "t_dis_mm": 1.028,
+  "t_req_mm": 2.628,
+  "t_min_mm": 3.004,
+  "recommended_schedule": {"schedule": "40", "thickness_mm": 6.35, "adequate": true},
+  "thin_wall_ok": true,
+  "schedules": [...]
+}
+```
+
 ### General
 
 | Method | Route | Description |
 |---|---|---|
-| GET | `/history` | Unified calculation history (all types) |
+| GET | `/history` | Unified calculation history (all 4 calculator types) |
 | GET | `/admin` | Admin dashboard with statistics |
 | GET | `/manual` | User reference / manual page |
 
@@ -688,6 +827,8 @@ See `DEPLOYMENT_GUIDE.md` for cloud/production deployment instructions.
 | IMO MEPC.355(78) | 2022 Guidelines on correction factors | Reefer, STS, shuttle tanker corrections |
 | MARPOL Annex VI, Reg. 2 | CO2 conversion factors | CF values for all fuel types |
 | Wärtsilä 18505-744-001 | Exhaust gas system design | EGBP element ξ values, methodology |
+| ASME B31.3 | Process Piping Code — §304.1.2 | Pipe wall thickness formula |
+| ASME B36.10M | Welded and Seamless Wrought Steel Pipe | Schedule thickness data |
 
 ---
 
@@ -747,7 +888,7 @@ new_v_ref = v_ref * (max_pme / p_me_original) ** (1.0 / n) if (p_me_original > 0
 
 ## 14. Future Roadmap
 
-- **React frontend** — The `frontend/` directory contains a Vite + React + TypeScript scaffold for a planned full SPA migration
+- **React frontend** — The `frontend/` directory contains a Vite + React 19 + TypeScript scaffold for a planned full SPA migration
 - **User authentication** — Login system for multi-user environments (ship management companies)
 - **Fleet management view** — Track compliance status across multiple vessels
 - **CII trend projection** — Project future CII rating based on operational patterns
@@ -756,3 +897,4 @@ new_v_ref = v_ref * (max_pme / p_me_original) ** (1.0 / n) if (p_me_original > 0
 - **Wind-assisted propulsion factor** — f_w correction for Flettner rotors and sails
 - **API authentication** — API key or JWT for programmatic access
 - **Docker deployment** — Containerised setup for easier cloud deployment
+- **Pipe Wall enhancements** — Add ASME B31.1 Power Piping support; expand material database
