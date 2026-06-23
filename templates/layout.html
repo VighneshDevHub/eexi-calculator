@@ -62,6 +62,13 @@
           <span>Pipe Wall Calc</span>
         </a>
         <a
+          href="{{ url_for('interpolator_page') }}"
+          class="nav-item {{ 'active' if request.path == url_for('interpolator_page') }}"
+        >
+          <i class="fas fa-ruler-combined"></i>
+          <span>Linear Interpolator</span>
+        </a>
+        <a
           href="{{ url_for('history') }}"
           class="nav-item {{ 'active' if request.path == url_for('history') }}"
         >

@@ -1,0 +1,475 @@
+{% extends "layout.html" %} {% block title %}Linear Interpolator{% endblock %}
+{% block content %}
+<div class="container main-grid">
+  <!-- Left: Calculator -->
+  <section class="card" aria-label="Interpolation calculator">
+    <div
+      class="card-header"
+      style="
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+      "
+    >
+      <div>
+        <h2
+          class="card-title"
+          style="margin: 0; display: flex; align-items: center; gap: 0.75rem"
+        >
+          <i class="fas fa-ruler-combined" style="color: var(--accent)"></i>
+          Interpolation Calculator
+        </h2>
+        <p class="subtitle" style="margin: 0.5rem 0 0 0">
+          Fill in five values and leave one blank. Click Calculate — the blank
+          value will be filled in by linear interpolation.
+        </p>
+      </div>
+      <div style="display: flex; gap: 0.75rem">
+        <button
+          class="btn-ghost-sm"
+          onclick="loadExample()"
+          title="Load a sample dataset"
+        >
+          <i class="fas fa-file-import"></i> Load Example
+        </button>
+        <button
+          class="btn-ghost-sm"
+          onclick="resetAll()"
+          title="Clear all fields"
+        >
+          <i class="fas fa-eraser"></i> Clear
+        </button>
+      </div>
+    </div>
+
+    <!-- Diagram -->
+    <div class="diagram-wrap" aria-hidden="true">
+      <svg
+        width="100%"
+        viewBox="0 0 320 115"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <defs>
+          <marker
+            id="arrowhead"
+            viewBox="0 0 8 8"
+            refX="6"
+            refY="4"
+            markerWidth="5"
+            markerHeight="5"
+            orient="auto"
+          >
+            <path
+              d="M1 1L7 4L1 7"
+              fill="none"
+              stroke="#888780"
+              stroke-width="1.2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </marker>
+        </defs>
+        <!-- Axes -->
+        <line
+          x1="30"
+          y1="90"
+          x2="300"
+          y2="90"
+          stroke="#B4B2A9"
+          stroke-width="1"
+          marker-end="url(#arrowhead)"
+        />
+        <line
+          x1="30"
+          y1="90"
+          x2="30"
+          y2="10"
+          stroke="#B4B2A9"
+          stroke-width="1"
+          marker-end="url(#arrowhead)"
+        />
+        <!-- Dashed background curve -->
+        <polyline
+          points="34,85 60,70 90,48 120,32 150,23 185,19 225,18 270,20"
+          fill="none"
+          stroke="#D3D1C7"
+          stroke-width="1"
+          stroke-dasharray="3,2"
+        />
+        <!-- Straight chord through (x1,y1) and (x2,y2) -->
+        <line
+          x1="80"
+          y1="50"
+          x2="220"
+          y2="20"
+          stroke="#5F5E5A"
+          stroke-width="1.5"
+        />
+        <!-- x1 point -->
+        <circle
+          cx="80"
+          cy="50"
+          r="4.5"
+          fill="white"
+          stroke="#5F5E5A"
+          stroke-width="1.5"
+        />
+        <line
+          x1="80"
+          y1="91"
+          x2="80"
+          y2="50"
+          stroke="#B4B2A9"
+          stroke-width="0.8"
+          stroke-dasharray="3,2"
+        />
+        <text
+          x="80"
+          y="104"
+          font-size="12"
+          fill="#5F5E5A"
+          text-anchor="middle"
+          font-family="system-ui,sans-serif"
+        >
+          x₁
+        </text>
+        <!-- x3 point (interpolated — highlighted) -->
+        <circle
+          cx="148"
+          cy="35"
+          r="5"
+          fill="#E6F1FB"
+          stroke="#185FA5"
+          stroke-width="1.5"
+        />
+        <line
+          x1="148"
+          y1="91"
+          x2="148"
+          y2="35"
+          stroke="#185FA5"
+          stroke-width="0.8"
+          stroke-dasharray="3,2"
+        />
+        <text
+          x="148"
+          y="104"
+          font-size="12"
+          fill="#185FA5"
+          text-anchor="middle"
+          font-family="system-ui,sans-serif"
+        >
+          x₃
+        </text>
+        <!-- x2 point -->
+        <circle
+          cx="220"
+          cy="20"
+          r="4.5"
+          fill="white"
+          stroke="#5F5E5A"
+          stroke-width="1.5"
+        />
+        <line
+          x1="220"
+          y1="91"
+          x2="220"
+          y2="20"
+          stroke="#B4B2A9"
+          stroke-width="0.8"
+          stroke-dasharray="3,2"
+        />
+        <text
+          x="220"
+          y="104"
+          font-size="12"
+          fill="#5F5E5A"
+          text-anchor="middle"
+          font-family="system-ui,sans-serif"
+        >
+          x₂
+        </text>
+        <!-- Axis labels -->
+        <text
+          x="305"
+          y="94"
+          font-size="11"
+          fill="#888780"
+          font-family="system-ui,sans-serif"
+        >
+          x
+        </text>
+        <text
+          x="22"
+          y="10"
+          font-size="11"
+          fill="#888780"
+          font-family="system-ui,sans-serif"
+        >
+          y
+        </text>
+      </svg>
+    </div>
+
+    <!-- Input table -->
+    <div class="input-grid" role="form" aria-label="Enter five known values">
+      <div class="col-head-row">
+        <div class="col-head">x</div>
+        <div class="col-head">y</div>
+      </div>
+
+      <div class="input-row" id="row-1">
+        <div class="input-cell">
+          <label class="sr-only" for="x1">x₁</label>
+          <input
+            type="number"
+            id="x1"
+            name="x1"
+            step="any"
+            placeholder="x₁"
+            autocomplete="off"
+            oninput="onFieldInput(this, 'x1')"
+          />
+        </div>
+        <div class="input-cell">
+          <label class="sr-only" for="y1">y₁</label>
+          <input
+            type="number"
+            id="y1"
+            name="y1"
+            step="any"
+            placeholder="y₁"
+            autocomplete="off"
+            oninput="onFieldInput(this, 'y1')"
+          />
+        </div>
+      </div>
+
+      <div class="input-row" id="row-2">
+        <div class="input-cell">
+          <label class="sr-only" for="x2">x₂</label>
+          <input
+            type="number"
+            id="x2"
+            name="x2"
+            step="any"
+            placeholder="x₂"
+            autocomplete="off"
+            oninput="onFieldInput(this, 'x2')"
+          />
+        </div>
+        <div class="input-cell">
+          <label class="sr-only" for="y2">y₂</label>
+          <input
+            type="number"
+            id="y2"
+            name="y2"
+            step="any"
+            placeholder="y₂"
+            autocomplete="off"
+            oninput="onFieldInput(this, 'y2')"
+          />
+        </div>
+      </div>
+
+      <div class="input-row" id="row-3">
+        <div class="input-cell">
+          <label class="sr-only" for="x3">x₃</label>
+          <input
+            type="number"
+            id="x3"
+            name="x3"
+            step="any"
+            placeholder="x₃"
+            autocomplete="off"
+            oninput="onFieldInput(this, 'x3')"
+          />
+        </div>
+        <div class="input-cell">
+          <label class="sr-only" for="y3">y₃</label>
+          <input
+            type="number"
+            id="y3"
+            name="y3"
+            step="any"
+            placeholder="y₃"
+            autocomplete="off"
+            oninput="onFieldInput(this, 'y3')"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Error message -->
+    <div id="form-error" class="form-error hidden" role="alert"></div>
+
+    <!-- Buttons -->
+    <div class="form-actions">
+      <button
+        id="calc-btn"
+        class="interpolator-btn-primary"
+        onclick="calculate()"
+      >
+        <span id="btn-text">Calculate</span>
+        <span id="btn-spinner" class="spinner hidden" aria-hidden="true"></span>
+      </button>
+    </div>
+
+    <!-- Help / details -->
+    <details class="help-section">
+      <summary>Help and details</summary>
+      <div class="help-body">
+        <p>
+          A straight line through <strong>(x₁, y₁)</strong> and
+          <strong>(x₂, y₂)</strong> satisfies:
+        </p>
+        <div class="formula-block">
+          y = [(x₂ − x) / (x₂ − x₁)] · y₁ + [(x₁ − x) / (x₁ − x₂)] · y₂
+        </div>
+        <p>
+          Setting x = x₃ gives the solution for y₃, and rearranging solves for
+          any of the six variables:
+        </p>
+        <table class="formula-table">
+          <thead>
+            <tr>
+              <th>Solve for</th>
+              <th>Formula</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>y₃</td>
+              <td><code>y₃ = [(x₂−x₃)·y₁ + (x₃−x₁)·y₂] / (x₂−x₁)</code></td>
+            </tr>
+            <tr>
+              <td>x₃</td>
+              <td><code>x₃ = [(y₂−y₃)·x₁ + (y₃−y₁)·x₂] / (y₂−y₁)</code></td>
+            </tr>
+            <tr>
+              <td>y₁</td>
+              <td><code>y₁ = [y₃·(x₂−x₁) − (x₃−x₁)·y₂] / (x₂−x₃)</code></td>
+            </tr>
+            <tr>
+              <td>y₂</td>
+              <td><code>y₂ = [y₃·(x₂−x₁) − (x₂−x₃)·y₁] / (x₃−x₁)</code></td>
+            </tr>
+            <tr>
+              <td>x₁</td>
+              <td><code>x₁ = [x₂·(y₁−y₃) + x₃·(y₂−y₁)] / (y₂−y₃)</code></td>
+            </tr>
+            <tr>
+              <td>x₂</td>
+              <td><code>x₂ = [x₁·(y₃−y₂) + x₃·(y₂−y₁)] / (y₃−y₁)</code></td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="help-note">
+          The x values must be unique and the y values must be unique. Exactly
+          one box must be empty before clicking Calculate.
+        </p>
+      </div>
+    </details>
+  </section>
+
+  <!-- Right: Results -->
+  <section
+    id="results-panel"
+    class="card results-card hidden"
+    aria-live="polite"
+    aria-label="Calculation results"
+  >
+    <h2 class="card-title" style="margin: 0 0 1.5rem 0">Result</h2>
+
+    <!-- Answer highlight -->
+    <div id="answer-box" class="answer-box">
+      <div class="answer-label" id="answer-label">—</div>
+      <div class="answer-value" id="answer-value">—</div>
+    </div>
+
+    <!-- Formula used -->
+    <div class="formula-used-wrap">
+      <div class="formula-used-label">Formula used</div>
+      <div class="formula-used" id="formula-used">—</div>
+    </div>
+
+    <!-- Step-by-step -->
+    <details class="steps-section" open>
+      <summary>Step-by-step derivation</summary>
+      <ol id="steps-list" class="steps-list"></ol>
+    </details>
+
+    <!-- Complete value set -->
+    <div class="complete-values">
+      <div class="cv-label">All six values</div>
+      <div class="cv-grid">
+        <div class="cv-item">
+          <span class="cv-key">x₁</span>
+          <span class="cv-val" id="cv-x1">—</span>
+        </div>
+        <div class="cv-item">
+          <span class="cv-key">y₁</span>
+          <span class="cv-val" id="cv-y1">—</span>
+        </div>
+        <div class="cv-item">
+          <span class="cv-key">x₂</span>
+          <span class="cv-val" id="cv-x2">—</span>
+        </div>
+        <div class="cv-item">
+          <span class="cv-key">y₂</span>
+          <span class="cv-val" id="cv-y2">—</span>
+        </div>
+        <div class="cv-item">
+          <span class="cv-key">x₃</span>
+          <span class="cv-val" id="cv-x3">—</span>
+        </div>
+        <div class="cv-item">
+          <span class="cv-key">y₃</span>
+          <span class="cv-val" id="cv-y3">—</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="result-actions">
+      <button class="interpolator-btn-secondary" onclick="resetAll()">
+        New calculation
+      </button>
+    </div>
+  </section>
+</div>
+<!-- /.container -->
+
+<!-- Info strip -->
+<div class="info-strip">
+  <div class="container">
+    <div class="info-cards">
+      <div class="info-card">
+        <div class="info-icon">🌡️</div>
+        <div>
+          <strong>Temperature estimation</strong><br />Find intermediate
+          temperature readings between two known sensor values at given
+          positions.
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="info-icon">💹</div>
+        <div>
+          <strong>Finance &amp; trading</strong><br />Estimate prices, yields,
+          or rates at intermediate time points between two known data points.
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="info-icon">⚙️</div>
+        <div>
+          <strong>Engineering data</strong><br />Interpolate allowable stress,
+          pressure ratings, or pipe schedule values from standard tables.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block scripts %}
+<script src="{{ url_for('static', filename='js/interpolator.js') }}"></script>
+{% endblock %}

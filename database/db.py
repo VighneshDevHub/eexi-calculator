@@ -158,6 +158,40 @@ class PipeWallCalculation(db.Model):
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M')
         }
 
+class LinearInterpolatorCalculation(db.Model):
+    __tablename__ = 'linear_interpolator_calculations'
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Input parameters
+    x1 = db.Column(db.Float, nullable=True)
+    y1 = db.Column(db.Float, nullable=True)
+    x2 = db.Column(db.Float, nullable=True)
+    y2 = db.Column(db.Float, nullable=True)
+    x3 = db.Column(db.Float, nullable=True)
+    y3 = db.Column(db.Float, nullable=True)
+    
+    # Output
+    blank_field = db.Column(db.String(10), nullable=False)
+    result = db.Column(db.Float, nullable=False)
+    formula_used = db.Column(db.String(100), nullable=False)
+    
+    full_data = db.Column(db.Text, nullable=True) # JSON string
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'calc_type': 'LinearInterpolator',
+            'name': f"Interpolated {self.blank_field}",
+            'ship_type': f"{self.formula_used}",
+            'attained': f"{self.result}",
+            'required': '-',
+            'status': 'Calculated',
+            'margin': None,
+            'created_at_raw': self.created_at.isoformat(),
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M')
+        }
+
 def init_db(app):
     db.init_app(app)
     with app.app_context():

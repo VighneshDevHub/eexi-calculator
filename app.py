@@ -2,7 +2,7 @@ import os
 import json
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for
-from database.db import db, init_db, Vessel, CIICalculation, EGBPCalculation, PipeWallCalculation
+from database.db import db, init_db, Vessel, CIICalculation, EGBPCalculation, PipeWallCalculation, LinearInterpolatorCalculation
 from calculators.eexi import calculate_eexi
 from calculators.cii import calculate_cii, CII_REDUCTION_FACTORS
 from calculators.egbp import calculate_egbp, ELEMENT_LABELS, ENGINE_PRESETS, ROUGHNESS_MAP
@@ -10,6 +10,7 @@ from calculators.pipe_wall import (
     calculate_pipe_wall, MATERIAL_LABELS, WELD_LABELS,
     NPS_DEXT_MM, SCHEDULE_THICKNESS
 )
+from calculators.linear_interpolator import calculate_linear_interpolator
 from calculators.utils.validators import validate_inputs
 from calculators.utils.ship_params import SHIP_LABELS, CF_LABELS
 from reports.pdf_generator import generate_pdf_report, generate_cii_pdf_report, generate_egbp_pdf_report, generate_pipe_pdf_report
@@ -80,12 +81,14 @@ def history():
     cii = CIICalculation.query.order_by(CIICalculation.created_at.desc()).all()
     egbp = EGBPCalculation.query.order_by(EGBPCalculation.created_at.desc()).all()
     pipe = PipeWallCalculation.query.order_by(PipeWallCalculation.created_at.desc()).all()
+    interpolator = LinearInterpolatorCalculation.query.order_by(LinearInterpolatorCalculation.created_at.desc()).all()
     
     all_calcs = (
         [v.to_dict() for v in eexi] + 
         [c.to_dict() for c in cii] + 
         [e.to_dict() for e in egbp] +
-        [p.to_dict() for p in pipe]
+        [p.to_dict() for p in pipe] +
+        [i.to_dict() for i in interpolator]
     )
     # Re-sort because we merged multiple sorted lists
     all_calcs.sort(key=lambda x: x.get('created_at_raw', ''), reverse=True)
@@ -127,6 +130,42 @@ def pipe_page():
                          material_options_json=material_options_json,
                          nps_dext_json=nps_dext_json,
                          weld_options_json=weld_options_json)
+
+@app.route('/interpolator')
+def interpolator_page():
+    return render_template('interpolator.html')
+
+@app.route('/api/calculate-interpolator', methods=['POST'])
+def api_calculate_interpolator():
+    try:
+        data = request.get_json(force=True, silent=True)
+        if not data:
+            return jsonify({"error": "Request body must be valid JSON."}), 400
+            
+        result = calculate_linear_interpolator(data)
+        
+        # Save to history
+        calc = LinearInterpolatorCalculation(
+            x1=data.get('x1'),
+            y1=data.get('y1'),
+            x2=data.get('x2'),
+            y2=data.get('y2'),
+            x3=data.get('x3'),
+            y3=data.get('y3'),
+            blank_field=result['blank_field'],
+            result=result['result'],
+            formula_used=result['formula_used'],
+            full_data=json.dumps(result)
+        )
+        db.session.add(calc)
+        db.session.commit()
+        
+        result['id'] = calc.id
+        return jsonify(result)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/calculate-egbp', methods=['POST'])
 def api_calculate_egbp():
