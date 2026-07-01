@@ -120,40 +120,35 @@ class EGBPCalculation(db.Model):
 class PipeWallCalculation(db.Model):
     __tablename__ = 'pipe_wall_calculations'
     id = db.Column(db.Integer, primary_key=True)
-    
-    # Input parameters
     nps = db.Column(db.Float, nullable=False)
     pressure_mpa = db.Column(db.Float, nullable=False)
     temp_c = db.Column(db.Float, nullable=False)
-    material = db.Column(db.String(20), nullable=False)
-    weld_type = db.Column(db.String(10), nullable=False)
-    corrosion_mm = db.Column(db.Float, nullable=False)
-    threaded = db.Column(db.Boolean, nullable=False)
-    mill_tolerance = db.Column(db.Float, nullable=False)
-    
-    # Output parameters
+    material = db.Column(db.String(50), nullable=False)
+    weld_type = db.Column(db.String(20), nullable=False)
+    corrosion_mm = db.Column(db.Float, nullable=True, default=0.0)
+    threaded = db.Column(db.Boolean, nullable=False, default=False)
+    mill_tolerance = db.Column(db.Float, nullable=False, default=12.5)
     t_dis_mm = db.Column(db.Float, nullable=False)
     t_req_mm = db.Column(db.Float, nullable=False)
     t_min_mm = db.Column(db.Float, nullable=False)
     S_mpa = db.Column(db.Float, nullable=False)
     dext_mm = db.Column(db.Float, nullable=False)
-    recommended_schedule = db.Column(db.String(10), nullable=True)
+    recommended_schedule = db.Column(db.String(20), nullable=True)
     available_thickness_mm = db.Column(db.Float, nullable=True)
     status = db.Column(db.String(20), nullable=False)
-    
-    full_data = db.Column(db.Text, nullable=True) # JSON string
+    full_data = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     def to_dict(self):
         return {
             'id': self.id,
-            'calc_type': 'PipeWall',
+            'calc_type': 'Pipe Wall',
             'name': f"Pipe NPS {self.nps}",
-            'ship_type': f"{self.material} | {self.pressure_mpa} MPa",
-            'attained': f"{round(self.t_min_mm, 2)} mm",
-            'required': f"Sch {self.recommended_schedule or '-'}",
+            'ship_type': f"{self.material} @ {self.pressure_mpa} MPa",
+            'attained': f"{self.t_min_mm:.2f} mm",
+            'required': f"{self.available_thickness_mm:.2f} mm" if self.available_thickness_mm else "N/A",
             'status': self.status,
-            'margin': round((self.available_thickness_mm - self.t_min_mm) if self.available_thickness_mm else 0, 2),
+            'margin': (self.available_thickness_mm - self.t_min_mm) if self.available_thickness_mm else None,
             'created_at_raw': self.created_at.isoformat(),
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M')
         }
@@ -161,32 +156,27 @@ class PipeWallCalculation(db.Model):
 class LinearInterpolatorCalculation(db.Model):
     __tablename__ = 'linear_interpolator_calculations'
     id = db.Column(db.Integer, primary_key=True)
-    
-    # Input parameters
     x1 = db.Column(db.Float, nullable=True)
     y1 = db.Column(db.Float, nullable=True)
     x2 = db.Column(db.Float, nullable=True)
     y2 = db.Column(db.Float, nullable=True)
     x3 = db.Column(db.Float, nullable=True)
     y3 = db.Column(db.Float, nullable=True)
-    
-    # Output
     blank_field = db.Column(db.String(10), nullable=False)
     result = db.Column(db.Float, nullable=False)
-    formula_used = db.Column(db.String(100), nullable=False)
-    
-    full_data = db.Column(db.Text, nullable=True) # JSON string
+    formula_used = db.Column(db.String(200), nullable=False)
+    full_data = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     def to_dict(self):
         return {
             'id': self.id,
-            'calc_type': 'LinearInterpolator',
-            'name': f"Interpolated {self.blank_field}",
-            'ship_type': f"{self.formula_used}",
-            'attained': f"{self.result}",
-            'required': '-',
-            'status': 'Calculated',
+            'calc_type': 'Interpolator',
+            'name': f"Linear Interpolation",
+            'ship_type': f"x1={self.x1}, y1={self.y1}, x2={self.x2}, y2={self.y2}",
+            'attained': f"{self.result:.2f}",
+            'required': f"Find {self.blank_field}",
+            'status': 'COMPLETED',
             'margin': None,
             'created_at_raw': self.created_at.isoformat(),
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M')

@@ -61,13 +61,6 @@
             >
               <i class="fas fa-file-pdf"></i> Report
             </a>
-            {% elif vessel.calc_type == 'PipeWall' %}
-            <a
-              href="/pipe-report-history/{{ vessel.id }}"
-              class="btn btn-outline btn-sm"
-            >
-              <i class="fas fa-file-pdf"></i> Report
-            </a>
             {% else %}
             <span class="unit">N/A</span>
             {% endif %}

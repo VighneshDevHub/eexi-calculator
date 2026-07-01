@@ -59,13 +59,13 @@
           class="nav-item {{ 'active' if request.path == url_for('pipe_page') }}"
         >
           <i class="fas fa-cube"></i>
-          <span>Pipe Wall Calc</span>
+          <span>Pipe Wall Calculator</span>
         </a>
         <a
           href="{{ url_for('interpolator_page') }}"
           class="nav-item {{ 'active' if request.path == url_for('interpolator_page') }}"
         >
-          <i class="fas fa-ruler-combined"></i>
+          <i class="fas fa-sliders-h"></i>
           <span>Linear Interpolator</span>
         </a>
         <a
@@ -129,24 +129,24 @@
     </main>
 
     <script>
-      document.addEventListener('DOMContentLoaded', () => {
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('sidebarOverlay');
-        const openBtn = document.getElementById('openSidebar');
-        const closeBtn = document.getElementById('closeSidebar');
+      document.addEventListener("DOMContentLoaded", () => {
+        const sidebar = document.getElementById("sidebar");
+        const overlay = document.getElementById("sidebarOverlay");
+        const openBtn = document.getElementById("openSidebar");
+        const closeBtn = document.getElementById("closeSidebar");
 
         function toggleSidebar() {
-          sidebar.classList.toggle('show');
-          overlay.classList.toggle('show');
+          sidebar.classList.toggle("show");
+          overlay.classList.toggle("show");
         }
 
-        if (openBtn) openBtn.addEventListener('click', toggleSidebar);
-        if (closeBtn) closeBtn.addEventListener('click', toggleSidebar);
-        if (overlay) overlay.addEventListener('click', toggleSidebar);
+        if (openBtn) openBtn.addEventListener("click", toggleSidebar);
+        if (closeBtn) closeBtn.addEventListener("click", toggleSidebar);
+        if (overlay) overlay.addEventListener("click", toggleSidebar);
 
         // Close sidebar on nav item click (mobile)
-        document.querySelectorAll('.nav-item').forEach((item) => {
-          item.addEventListener('click', () => {
+        document.querySelectorAll(".nav-item").forEach((item) => {
+          item.addEventListener("click", () => {
             if (window.innerWidth <= 992) {
               toggleSidebar();
             }

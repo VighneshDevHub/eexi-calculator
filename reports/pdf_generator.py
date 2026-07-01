@@ -2,7 +2,7 @@ import os
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from datetime import datetime
 
 def generate_pdf_report(vessel_data, result_data):
@@ -370,7 +370,7 @@ def generate_cii_pdf_report(vessel_data, result_data):
 
 def generate_pipe_pdf_report(input_data, result_data):
     """
-    Generates a PDF report for the Pipe Wall Thickness calculation per ASME B31.3.
+    Generates a PDF report for the Pipe Wall calculation.
     """
     reports_dir = os.path.join(os.getcwd(), 'reports', 'generated')
     if not os.path.exists(reports_dir):
@@ -404,107 +404,83 @@ def generate_pipe_pdf_report(input_data, result_data):
     elements = []
     
     # Title
-    elements.append(Paragraph("ASME B31.3 Pipe Wall Thickness Report", title_style))
+    elements.append(Paragraph("Pipe Wall Thickness Calculation Report", title_style))
     elements.append(Paragraph(f"Report Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
     elements.append(Spacer(1, 20))
     
     # Input Parameters
     elements.append(Paragraph("Input Parameters", section_style))
-    
     from calculators.pipe_wall import MATERIAL_LABELS, WELD_LABELS
-    material_label = MATERIAL_LABELS.get(input_data.get('material', 'A106B'), input_data.get('material', 'Unknown'))
-    weld_label = WELD_LABELS.get(input_data.get('weld_type', 'S'), input_data.get('weld_type', 'Unknown'))
-    
-    pipe_info = [
-        ["Nominal Pipe Size", f"NPS {input_data.get('nps', 'N/A')}"],
-        ["Outside Diameter", f"{result_data.get('dext_mm', 'N/A')} mm"],
-        ["Design Pressure", f"{input_data.get('pressure_mpa', 'N/A')} MPa"],
-        ["Design Temperature", f"{input_data.get('temp_c', 'N/A')} °C"],
-        ["Material", material_label],
-        ["Weld Type", weld_label],
-        ["Material Type", input_data.get('material_type', 'Ferritic').capitalize()],
-        ["Corrosion Allowance", f"{input_data.get('corrosion_mm', 'N/A')} mm"],
-        ["Threaded Connection", "Yes" if input_data.get('threaded', False) else "No"],
-        ["Mill Tolerance", f"{input_data.get('mill_tolerance', 12.5)}%"],
+    input_info = [
+        ["Nominal Pipe Size (NPS)", input_data.get('nps', 'N/A')],
+        ["Design Pressure", f"{input_data.get('pressure_mpa', 0.0)} MPa"],
+        ["Design Temperature", f"{input_data.get('temp_c', 0.0)} °C"],
+        ["Material", MATERIAL_LABELS.get(input_data.get('material', ''), input_data.get('material', 'N/A'))],
+        ["Weld Type", WELD_LABELS.get(input_data.get('weld_type', ''), input_data.get('weld_type', 'N/A'))],
+        ["Corrosion Allowance", f"{input_data.get('corrosion_mm', 0.0)} mm"],
+        ["Threaded", "Yes" if input_data.get('threaded', False) else "No"],
+        ["Mill Tolerance", f"{input_data.get('mill_tolerance', 12.5)}%"]
     ]
     
-    t1 = Table(pipe_info, colWidths=[200, 250])
+    t1 = Table(input_info, colWidths=[200, 250])
     t1.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f8fafc')),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
         ('PADDING', (0, 0), (-1, -1), 6),
-        ('FONTSIZE', (0, 0), (-1, -1), 11),
     ]))
     elements.append(t1)
     
-    # Calculation Details
-    elements.append(Paragraph("Calculation Details", section_style))
+    # Calculation Results
+    elements.append(Paragraph("Calculation Results", section_style))
+    status_color = colors.green if result_data.get('recommended_schedule') else colors.red
     
-    calc_info = [
-        ["Pressure Design Thickness (t_dis)", f"{result_data.get('t_dis_mm', 'N/A'):.3f} mm"],
-        ["Corrosion Allowance (CA)", f"{result_data.get('CA_mm', 'N/A'):.3f} mm"],
-        ["Thread Depth (TD)", f"{result_data.get('TD_mm', 'N/A'):.3f} mm"],
-        ["Allowable Stress (S)", f"{result_data.get('S_mpa', 'N/A'):.2f} MPa"],
-        ["Weld Joint Efficiency (E)", f"{result_data.get('E_factor', 'N/A'):.3f}"],
-        ["Y Coefficient (Y)", f"{result_data.get('Y_coeff', 'N/A'):.3f}"],
+    results_info = [
+        ["Outside Diameter (Dext)", f"{result_data.get('dext_mm', 0.0):.2f} mm"],
+        ["Allowable Stress (S)", f"{result_data.get('S_mpa', 0.0):.2f} MPa"],
+        ["Weld Joint Factor (E)", f"{result_data.get('E_factor', 0.0):.2f}"],
+        ["Y Coefficient", f"{result_data.get('Y_coeff', 0.0):.2f}"],
+        ["Corrosion Allowance (CA)", f"{result_data.get('CA_mm', 0.0):.2f} mm"],
+        ["Thread Depth (TD)", f"{result_data.get('TD_mm', 0.0):.2f} mm"],
+        ["Total Allowance (OT)", f"{result_data.get('OT_mm', 0.0):.2f} mm"],
+        ["Pressure Design Thickness (t_dis)", f"{result_data.get('t_dis_mm', 0.0):.4f} mm"],
+        ["Required Thickness (t_req)", f"{result_data.get('t_req_mm', 0.0):.4f} mm"],
+        ["Minimum Thickness (t_min)", f"{result_data.get('t_min_mm', 0.0):.4f} mm"],
+        ["Thin Wall Check", "Passed" if result_data.get('thin_wall_ok', False) else "Failed"],
+        ["Recommended Schedule", result_data.get('recommended_schedule', {}).get('schedule', 'N/A') if result_data.get('recommended_schedule') else 'N/A'],
+        ["Available Thickness", f"{result_data.get('recommended_schedule', {}).get('thickness_mm', 0.0):.2f} mm" if result_data.get('recommended_schedule') else 'N/A'],
+        ["Status", Paragraph(f"<b>{'PASS' if result_data.get('recommended_schedule') else 'FAIL'}</b>", ParagraphStyle('Status', textColor=status_color, fontSize=14))]
     ]
     
-    t2 = Table(calc_info, colWidths=[200, 250])
+    t2 = Table(results_info, colWidths=[200, 250])
     t2.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f8fafc')),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
         ('PADDING', (0, 0), (-1, -1), 6),
-        ('FONTSIZE', (0, 0), (-1, -1), 11),
     ]))
     elements.append(t2)
     
-    # Results
-    elements.append(Paragraph("Results Summary", section_style))
-    
-    status = "PASS" if result_data.get('recommended_schedule') else "NO ADEQUATE SCHEDULE"
-    status_color = colors.green if status == "PASS" else colors.red
-    
-    results_info = [
-        ["Required Thickness (t_req)", f"{result_data.get('t_req_mm', 'N/A'):.3f} mm"],
-        ["Minimum Thickness (t_min)", f"{result_data.get('t_min_mm', 'N/A'):.3f} mm"],
-        ["Thin-Wall Condition", "OK" if result_data.get('thin_wall_ok', True) else "WARNING"],
-        ["Overall Status", Paragraph(f"<b>{status}</b>", ParagraphStyle('Status', textColor=status_color, fontSize=14))],
-    ]
-    
-    t3 = Table(results_info, colWidths=[200, 250])
-    t3.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f8fafc')),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ('PADDING', (0, 0), (-1, -1), 6),
-        ('FONTSIZE', (0, 0), (-1, -1), 11),
-    ]))
-    elements.append(t3)
-    
-    # Schedule Recommendations
+    # Schedule Options
     if result_data.get('schedules'):
-        elements.append(PageBreak())
-        elements.append(Paragraph("ASME B36.10M Schedule Thicknesses", section_style))
-        
-        schedule_table = [["Schedule", "Thickness (mm)", "Status"]]
+        elements.append(Paragraph("Available Schedules", section_style))
+        schedule_data = [["Schedule", "Thickness (mm)", "Status"]]
         for sched in result_data['schedules']:
-            sched_status = "✓ Adequate" if sched.get('adequate') else "✗ Inadequate"
-            schedule_table.append([
-                str(sched.get('schedule')),
-                f"{sched.get('thickness_mm', 'N/A'):.2f}",
-                sched_status
+            status = "Adequate" if sched['adequate'] else "Inadequate"
+            sched_color = colors.green if sched['adequate'] else colors.red
+            schedule_data.append([
+                sched['schedule'],
+                f"{sched['thickness_mm']:.2f}",
+                Paragraph(status, ParagraphStyle('SchedStatus', textColor=sched_color))
             ])
         
-        t4 = Table(schedule_table, colWidths=[150, 150, 150])
-        t4.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0f172a')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        t3 = Table(schedule_data, colWidths=[100, 100, 100])
+        t3.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f1f5f9')),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('PADDING', (0, 0), (-1, -1), 6),
         ]))
-        elements.append(t4)
+        elements.append(t3)
     
     doc.build(elements)
     return file_path
