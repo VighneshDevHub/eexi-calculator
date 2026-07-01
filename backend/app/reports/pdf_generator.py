@@ -1,0 +1,486 @@
+import os
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from datetime import datetime
+
+def generate_pdf_report(vessel_data, result_data):
+    """
+    Generates a PDF report for the EEXI calculation.
+    """
+    reports_dir = os.path.join(os.getcwd(), 'reports', 'generated')
+    if not os.path.exists(reports_dir):
+        os.makedirs(reports_dir)
+        
+    # Use user local time for filename if available
+    time_for_filename = datetime.now().strftime('%Y%m%d_%H%M%S')
+    if vessel_data.get('user_local_time'):
+        try:
+            # Try to sanitize the user local time for filename
+            time_for_filename = vessel_data['user_local_time'].replace('-', '').replace(' ', '_').replace(':', '')
+        except:
+            pass
+
+    filename = f"EEXI_Report_{vessel_data['id']}_{time_for_filename}.pdf"
+    file_path = os.path.join(reports_dir, filename)
+    
+    doc = SimpleDocTemplate(file_path, pagesize=A4)
+    styles = getSampleStyleSheet()
+    
+    # Custom styles
+    title_style = ParagraphStyle(
+        'TitleStyle',
+        parent=styles['Heading1'],
+        fontSize=24,
+        textColor=colors.HexColor('#0f172a'),
+        alignment=1,
+        spaceAfter=30
+    )
+    
+    section_style = ParagraphStyle(
+        'SectionStyle',
+        parent=styles['Heading2'],
+        fontSize=14,
+        textColor=colors.HexColor('#0284c7'),
+        spaceBefore=20,
+        spaceAfter=10
+    )
+
+    elements = []
+    
+    # Title
+    elements.append(Paragraph("EEXI Compliance Report", title_style))
+    
+    # Use stored local time if available
+    report_date = vessel_data.get('user_local_time', vessel_data.get('created_at', 'N/A'))
+    elements.append(Paragraph(f"Date: {report_date}", styles['Normal']))
+    elements.append(Spacer(1, 20))
+    
+    # Vessel Details
+    elements.append(Paragraph("Vessel Particulars", section_style))
+    vessel_info = [
+        ["Vessel Name", vessel_data.get('name', 'N/A')],
+        ["Ship Type", vessel_data['ship_type'].replace('_', ' ').title()],
+        ["Deadweight (DWT)", f"{vessel_data['dwt']} tonnes"],
+        ["Gross Tonnage (GT)", f"{vessel_data['gt']}"],
+        ["Main Engine MCR", f"{vessel_data['mcr']} kW"],
+        ["ME SFC", f"{vessel_data['sfc']} g/kWh"],
+        ["Fuel Type", vessel_data['fuel'].upper()],
+        ["Design Speed (V_ref)", f"{vessel_data['speed']} knots"]
+    ]
+    
+    if vessel_data.get('pae') and vessel_data['pae'] > 0:
+        vessel_info.append(["Auxiliary Engine Power", f"{vessel_data['pae']} kW"])
+        vessel_info.append(["Auxiliary SFC", f"{vessel_data['sfc_ae']} g/kWh"])
+        vessel_info.append(["Auxiliary Fuel Type", vessel_data.get('fuel_ae', vessel_data['fuel']).upper()])
+
+    vessel_info.append(["Efficiency Factor (f_eff)", f"{vessel_data.get('f_eff', 1.0)}"])
+    vessel_info.append(["Capacity Factor (f_i)", f"{vessel_data.get('f_i', 1.0)}"])
+    vessel_info.append(["Weather Factor (f_w)", f"{vessel_data.get('f_w', 1.0)}"])
+
+    t1 = Table(vessel_info, colWidths=[200, 250])
+    t1.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f8fafc')),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('PADDING', (0, 0), (-1, -1), 6),
+    ]))
+    elements.append(t1)
+    
+    # Results
+    elements.append(Paragraph("Calculation Results", section_style))
+    status_color = colors.green
+    if result_data['status'] == 'NON_COMPLIANT': status_color = colors.red
+    
+    results_info = [
+        ["Attained EEXI", f"{result_data['attained_eexi']} gCO2/t·nm"],
+        ["Required EEXI", f"{result_data['required_eexi']} gCO2/t·nm"],
+        ["Compliance Status", Paragraph(f"<b>{result_data['status']}</b>", ParagraphStyle('Status', textColor=status_color))],
+        ["Margin", f"{result_data['margin']}%"]
+    ]
+    t2 = Table(results_info, colWidths=[200, 250])
+    t2.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f8fafc')),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('PADDING', (0, 0), (-1, -1), 6),
+    ]))
+    elements.append(t2)
+    
+    # EPL / MCRlim
+    if result_data.get('epl'):
+        elements.append(Paragraph("EPL / MCRlim Recommendation", section_style))
+        if result_data['epl'].get('epl_possible'):
+            epl_info = [
+                ["Calculated MCRlim", f"{result_data['epl']['limited_mcr']} kW"],
+                ["Max PME (83% of MCRlim)", f"{result_data['epl']['max_pme']} kW"],
+                ["Estimated Speed Vref,lim", f"{result_data['epl']['new_v_ref']} kn"]
+            ]
+            if result_data.get('status') == 'COMPLIANT':
+                elements.append(Paragraph("The vessel is compliant. For reference, the MCRlim required to exactly match the target is shown below.", styles['Normal']))
+            else:
+                elements.append(Paragraph(result_data['epl']['note'], styles['Normal']))
+                
+            elements.append(Spacer(1, 10))
+            t3 = Table(epl_info, colWidths=[200, 250])
+            t3.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f8fafc')),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                ('PADDING', (0, 0), (-1, -1), 6),
+            ]))
+            elements.append(t3)
+        else:
+            elements.append(Paragraph(result_data['epl']['note'], ParagraphStyle('Error', textColor=colors.red)))
+    
+    doc.build(elements)
+    return file_path
+
+def generate_egbp_pdf_report(result_data):
+    """
+    Generates a PDF report for the EGBP calculation.
+    """
+    reports_dir = os.path.join(os.getcwd(), 'reports', 'generated')
+    if not os.path.exists(reports_dir):
+        os.makedirs(reports_dir)
+        
+    time_for_filename = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename = f"EGBP_Report_{time_for_filename}.pdf"
+    file_path = os.path.join(reports_dir, filename)
+    
+    doc = SimpleDocTemplate(file_path, pagesize=A4)
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle(
+        'TitleStyle',
+        parent=styles['Heading1'],
+        fontSize=24,
+        textColor=colors.HexColor('#0f172a'),
+        alignment=1,
+        spaceAfter=30
+    )
+    
+    section_style = ParagraphStyle(
+        'SectionStyle',
+        parent=styles['Heading2'],
+        fontSize=14,
+        textColor=colors.HexColor('#10b981'),
+        spaceBefore=20,
+        spaceAfter=10
+    )
+
+    elements = []
+    
+    # Title
+    elements.append(Paragraph("Exhaust Gas Back Pressure Report", title_style))
+    elements.append(Paragraph(f"Report Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
+    elements.append(Spacer(1, 20))
+    
+    # Exhaust Gas Sources
+    if result_data.get('engines'):
+        elements.append(Paragraph("Exhaust Gas Sources", section_style))
+        engine_table_data = [["Source", "Mass Flow (kg/s)", "Temp (°C)", "Max BP (Pa)", "Roughness"]]
+        for en in result_data['engines']:
+            engine_table_data.append([
+                en.get('label', 'Custom'),
+                str(en.get('mass_flow', 0)),
+                str(en.get('temp', 0)),
+                str(en.get('max_bp', 3000)),
+                en.get('roughness', 'steel_welded').replace('_', ' ').title()
+            ])
+        
+        t0 = Table(engine_table_data, colWidths=[150, 90, 70, 70, 90])
+        t0.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f1f5f9')),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('PADDING', (0, 0), (-1, -1), 6),
+        ]))
+        elements.append(t0)
+        elements.append(Spacer(1, 10))
+
+    # System Parameters
+    elements.append(Paragraph("System Summary (Combined)", section_style))
+    sys_info = [
+        ["Total Mass Flow", f"{result_data['mass_flow_kgs']} kg/s"],
+        ["Avg. Temperature", f"{result_data['temp_tc_c']} °C"],
+        ["System Max BP Limit", f"{result_data['max_bp_pa']} Pa"],
+        ["Design Roughness", f"{result_data.get('roughness_key', 'steel_welded').replace('_', ' ').title()}"]
+    ]
+    
+    t1 = Table(sys_info, colWidths=[200, 250])
+    t1.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f8fafc')),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('PADDING', (0, 0), (-1, -1), 6),
+    ]))
+    elements.append(t1)
+    
+    # Overall Results
+    elements.append(Paragraph("Overall Assessment", section_style))
+    status_color = colors.green if result_data['status'] == 'PASSED' else colors.red
+    
+    results_info = [
+        ["Total Back Pressure", f"{result_data['total_pressure_pa']} Pa"],
+        ["Total Back Pressure", f"{result_data['total_pressure_mmwc']} mmWC"],
+        ["Compliance Status", Paragraph(f"<b>{result_data['status']}</b>", ParagraphStyle('Status', textColor=status_color, fontSize=14))],
+        ["Safety Margin", f"{result_data.get('margin_pct', 0)}%"]
+    ]
+    
+    t2 = Table(results_info, colWidths=[200, 250])
+    t2.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f8fafc')),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('PADDING', (0, 0), (-1, -1), 6),
+    ]))
+    elements.append(t2)
+    
+    # Breakdown Table
+    elements.append(Paragraph("Pipeline Elements Breakdown", section_style))
+    table_data = [["#", "Element", "Velocity (m/s)", "ξ", "ΔP (Pa)"]]
+    for el in result_data['elements']:
+        table_data.append([
+            str(el['position']),
+            el['element_type'].replace('_', ' ').title(),
+            f"{el['velocity']:.2f}",
+            f"{el['xi']:.3f}",
+            f"{el['pressure_loss_pa']:.1f}"
+        ])
+    
+    t3 = Table(table_data, colWidths=[30, 150, 90, 90, 90])
+    t3.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0f172a')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('PADDING', (0, 0), (-1, -1), 6),
+    ]))
+    elements.append(t3)
+    
+    doc.build(elements)
+    return file_path
+
+def generate_cii_pdf_report(vessel_data, result_data):
+    """
+    Generates a PDF report for the CII calculation.
+    """
+    reports_dir = os.path.join(os.getcwd(), 'reports', 'generated')
+    if not os.path.exists(reports_dir):
+        os.makedirs(reports_dir)
+        
+    time_for_filename = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename = f"CII_Report_{result_data['year']}_{time_for_filename}.pdf"
+    file_path = os.path.join(reports_dir, filename)
+    
+    doc = SimpleDocTemplate(file_path, pagesize=A4)
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle(
+        'TitleStyle',
+        parent=styles['Heading1'],
+        fontSize=24,
+        textColor=colors.HexColor('#0f172a'),
+        alignment=1,
+        spaceAfter=30
+    )
+    
+    section_style = ParagraphStyle(
+        'SectionStyle',
+        parent=styles['Heading2'],
+        fontSize=14,
+        textColor=colors.HexColor('#3b82f6'),
+        spaceBefore=20,
+        spaceAfter=10
+    )
+
+    elements = []
+    
+    # Title
+    elements.append(Paragraph("CII Compliance Report", title_style))
+    elements.append(Paragraph(f"Assessment Year: {result_data['year']}", styles['Normal']))
+    elements.append(Paragraph(f"Report Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
+    elements.append(Spacer(1, 20))
+    
+    # Vessel & Operating Data
+    elements.append(Paragraph("Vessel & Operating Data", section_style))
+    vessel_info = [
+        ["Ship Type", result_data['inputs_echo']['ship_type'].replace('_', ' ').title()],
+        ["Deadweight (DWT)", f"{result_data['inputs_echo']['dwt']} tonnes"],
+        ["Gross Tonnage (GT)", f"{result_data['inputs_echo']['gt']}"],
+        ["Distance Sailed", f"{result_data['distance_nm']} nm"],
+        ["Capacity (used for CII)", f"{result_data['capacity']}"]
+    ]
+    
+    t1 = Table(vessel_info, colWidths=[200, 250])
+    t1.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f8fafc')),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('PADDING', (0, 0), (-1, -1), 6),
+    ]))
+    elements.append(t1)
+    
+    # Results
+    elements.append(Paragraph("CII Calculation Results", section_style))
+    rating = result_data['rating']['rating']
+    rating_colors = {'A': colors.green, 'B': colors.lightgreen, 'C': colors.orange, 'D': colors.red, 'E': colors.darkred}
+    
+    results_info = [
+        ["Attained CII", f"{result_data['attained_cii']} gCO2/t·nm"],
+        ["Required CII", f"{result_data['required_cii']} gCO2/t·nm"],
+        ["CII Rating", Paragraph(f"<b>{rating}</b>", ParagraphStyle('Rating', textColor=rating_colors.get(rating, colors.black), fontSize=14))],
+        ["Margin vs Required", f"{result_data['rating']['margin_pct']}%"],
+        ["Rating Description", result_data['rating']['description']]
+    ]
+    
+    t2 = Table(results_info, colWidths=[200, 250])
+    t2.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f8fafc')),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('PADDING', (0, 0), (-1, -1), 6),
+        ('VALIGN', (0, -1), (-1, -1), 'TOP'),
+    ]))
+    elements.append(t2)
+    
+    # Corrections
+    if result_data.get('corrections_applied'):
+        elements.append(Paragraph("Correction Factors Applied (MEPC.355(78))", section_style))
+        for corr in result_data['corrections_applied']:
+            elements.append(Paragraph(f"• {corr}", styles['Normal']))
+            
+    # Boundaries
+    elements.append(Paragraph("Rating Boundaries", section_style))
+    b = result_data['rating']['boundaries']
+    bound_info = [
+        ["A/B Boundary", f"{b['A']}"],
+        ["B/C Boundary", f"{b['B']}"],
+        ["C/D Boundary", f"{b['C']}"],
+        ["D/E Boundary", f"{b['D']}"]
+    ]
+    t3 = Table(bound_info, colWidths=[200, 250])
+    t3.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f8fafc')),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('PADDING', (0, 0), (-1, -1), 6),
+    ]))
+    elements.append(t3)
+    
+    doc.build(elements)
+    return file_path
+
+def generate_pipe_pdf_report(input_data, result_data):
+    """
+    Generates a PDF report for the Pipe Wall calculation.
+    """
+    reports_dir = os.path.join(os.getcwd(), 'reports', 'generated')
+    if not os.path.exists(reports_dir):
+        os.makedirs(reports_dir)
+        
+    time_for_filename = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename = f"Pipe_Wall_Report_{time_for_filename}.pdf"
+    file_path = os.path.join(reports_dir, filename)
+    
+    doc = SimpleDocTemplate(file_path, pagesize=A4)
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle(
+        'TitleStyle',
+        parent=styles['Heading1'],
+        fontSize=24,
+        textColor=colors.HexColor('#0f172a'),
+        alignment=1,
+        spaceAfter=30
+    )
+    
+    section_style = ParagraphStyle(
+        'SectionStyle',
+        parent=styles['Heading2'],
+        fontSize=14,
+        textColor=colors.HexColor('#f59e0b'),
+        spaceBefore=20,
+        spaceAfter=10
+    )
+
+    elements = []
+    
+    # Title
+    elements.append(Paragraph("Pipe Wall Thickness Calculation Report", title_style))
+    elements.append(Paragraph(f"Report Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
+    elements.append(Spacer(1, 20))
+    
+    # Input Parameters
+    elements.append(Paragraph("Input Parameters", section_style))
+    from app.calculators.pipe_wall import MATERIAL_LABELS, WELD_LABELS
+    input_info = [
+        ["Nominal Pipe Size (NPS)", input_data.get('nps', 'N/A')],
+        ["Design Pressure", f"{input_data.get('pressure_mpa', 0.0)} MPa"],
+        ["Design Temperature", f"{input_data.get('temp_c', 0.0)} °C"],
+        ["Material", MATERIAL_LABELS.get(input_data.get('material', ''), input_data.get('material', 'N/A'))],
+        ["Weld Type", WELD_LABELS.get(input_data.get('weld_type', ''), input_data.get('weld_type', 'N/A'))],
+        ["Corrosion Allowance", f"{input_data.get('corrosion_mm', 0.0)} mm"],
+        ["Threaded", "Yes" if input_data.get('threaded', False) else "No"],
+        ["Mill Tolerance", f"{input_data.get('mill_tolerance', 12.5)}%"]
+    ]
+    
+    t1 = Table(input_info, colWidths=[200, 250])
+    t1.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f8fafc')),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('PADDING', (0, 0), (-1, -1), 6),
+    ]))
+    elements.append(t1)
+    
+    # Calculation Results
+    elements.append(Paragraph("Calculation Results", section_style))
+    status_color = colors.green if result_data.get('recommended_schedule') else colors.red
+    
+    results_info = [
+        ["Outside Diameter (Dext)", f"{result_data.get('dext_mm', 0.0):.2f} mm"],
+        ["Allowable Stress (S)", f"{result_data.get('S_mpa', 0.0):.2f} MPa"],
+        ["Weld Joint Factor (E)", f"{result_data.get('E_factor', 0.0):.2f}"],
+        ["Y Coefficient", f"{result_data.get('Y_coeff', 0.0):.2f}"],
+        ["Corrosion Allowance (CA)", f"{result_data.get('CA_mm', 0.0):.2f} mm"],
+        ["Thread Depth (TD)", f"{result_data.get('TD_mm', 0.0):.2f} mm"],
+        ["Total Allowance (OT)", f"{result_data.get('OT_mm', 0.0):.2f} mm"],
+        ["Pressure Design Thickness (t_dis)", f"{result_data.get('t_dis_mm', 0.0):.4f} mm"],
+        ["Required Thickness (t_req)", f"{result_data.get('t_req_mm', 0.0):.4f} mm"],
+        ["Minimum Thickness (t_min)", f"{result_data.get('t_min_mm', 0.0):.4f} mm"],
+        ["Thin Wall Check", "Passed" if result_data.get('thin_wall_ok', False) else "Failed"],
+        ["Recommended Schedule", result_data.get('recommended_schedule', {}).get('schedule', 'N/A') if result_data.get('recommended_schedule') else 'N/A'],
+        ["Available Thickness", f"{result_data.get('recommended_schedule', {}).get('thickness_mm', 0.0):.2f} mm" if result_data.get('recommended_schedule') else 'N/A'],
+        ["Status", Paragraph(f"<b>{'PASS' if result_data.get('recommended_schedule') else 'FAIL'}</b>", ParagraphStyle('Status', textColor=status_color, fontSize=14))]
+    ]
+    
+    t2 = Table(results_info, colWidths=[200, 250])
+    t2.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f8fafc')),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('PADDING', (0, 0), (-1, -1), 6),
+    ]))
+    elements.append(t2)
+    
+    # Schedule Options
+    if result_data.get('schedules'):
+        elements.append(Paragraph("Available Schedules", section_style))
+        schedule_data = [["Schedule", "Thickness (mm)", "Status"]]
+        for sched in result_data['schedules']:
+            status = "Adequate" if sched['adequate'] else "Inadequate"
+            sched_color = colors.green if sched['adequate'] else colors.red
+            schedule_data.append([
+                sched['schedule'],
+                f"{sched['thickness_mm']:.2f}",
+                Paragraph(status, ParagraphStyle('SchedStatus', textColor=sched_color))
+            ])
+        
+        t3 = Table(schedule_data, colWidths=[100, 100, 100])
+        t3.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f1f5f9')),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('PADDING', (0, 0), (-1, -1), 6),
+        ]))
+        elements.append(t3)
+    
+    doc.build(elements)
+    return file_path
